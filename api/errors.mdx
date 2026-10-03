@@ -1,0 +1,18 @@
+---
+title: "Errors"
+description: "Protected application failures are not transport outcome guarantees."
+---
+
+| code | Treatment |
+| --- | --- |
+| invalid | Malformed/unsupported command, units, IDs, bounds or deadline; inspect input |
+| unauthorized | Owner/agent, scope, epoch, signature, session or expiry failed |
+| not-found | Authorized lookup did not find the target in this account |
+| conflict | Same ID with changed intent, or stale read revision; reconcile/resnapshot |
+| unavailable | Required state, freshness, risk or evidence unavailable; contain and reconcile |
+
+Typed errors are returned inside the encrypted response as `{ kind: 'error', code }`. No private details belong in public HTTP errors or logs.
+
+The SDK throws a redacted delivery/verification error when it cannot establish a valid response. **A throw is not rejection.** Some actions may already be durable or externally exposed. Reconnect and query original operations before economic retry.
+
+For paging conflict restart from zero. For stream rejection/closure restart with fresh attestation and current epoch, then resnapshot. Never continue consuming a gapped stream as authoritative.

@@ -1,0 +1,12 @@
+---
+title: "Recovery"
+description: "Operator-assisted final claims, not a heartbeat-only exit."
+---
+
+Ordinary withdrawals use the authenticated payout workflow. Heartbeat failure cannot activate claims or make stale balances payable.
+
+The operator must fence writers and outstanding venue capabilities, reconcile uncertain actions, settle exposure, return accessible assets, finalize remaining claims and segregate vault backing. Authorized activation then enables recovery claims.
+
+The intended encrypted package contains the final claim, privacy salt, Merkle path, domain/epoch and paid-counter basis. It must remain obtainable outside the trading API. Users verify it and submit to the activated program; previous payouts cannot be paid again.
+
+The program is implemented; joined wind-down and independent package delivery are not yet qualified. Do not assume a package service exists today. Recovery depends on operators, venue access and assets—not unconditional operator-free exit. Public claims reveal payment details, not full private history.

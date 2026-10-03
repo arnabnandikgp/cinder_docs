@@ -1,0 +1,111 @@
+---
+title: "View"
+description: "Return a compact private account snapshot."
+api: "POST /v1/exchange"
+playground: "none"
+---
+
+**Permission:** Owner or live READ agent.
+
+Return a compact private account snapshot. The same command is available over [WebSocket](/api/websocket).
+
+<Note>
+  Fields below describe the SDK request **before encryption** and the decoded reply.
+  The HTTP body is encrypted binary `application/octet-stream`, not JSON.
+  Use a verified [SDK client](/quickstart); the interactive playground is disabled.
+</Note>
+
+<RequestExample>
+```ts SDK request
+const response = await client.request({ id: ctx.id, epoch: ctx.epoch, expiresAt: ctx.expiresAt,
+    command: { kind: 'view' } });
+```
+</RequestExample>
+
+<ResponseExample>
+```ts Decoded view
+({
+  kind: 'view',
+  epoch: ctx.epoch,
+  cash: 100n,
+  funding: 0n,
+  held: 0n,
+  positions: [],
+  operations: [],
+})
+```
+
+```ts Encrypted application error
+({ kind: 'error', code: 'unauthorized' })
+```
+</ResponseExample>
+
+## Request fields
+
+The client supplies the configured domain, account, policy, signer and verified
+session binding, and signs the canonical [envelope](/api/authentication).
+
+<ParamField body="id" type="Uint8Array (32 bytes)" required>
+  Nonzero private request ID. Retain it for an exact retry; use a distinct ID for a different intent.
+</ParamField>
+
+<ParamField body="epoch" type="bigint (u64)" required>
+  Current account authority epoch.
+</ParamField>
+
+<ParamField body="expiresAt" type="bigint (u64)" required>
+  Authentication expiry in milliseconds, within the verified session and deployment limits.
+</ParamField>
+
+<ParamField body="command.kind" type="&quot;view&quot;" required>
+  Command discriminator.
+</ParamField>
+
+## Response fields
+
+The example uses illustrative quote atoms and configured IDs, not live venue data.
+A view is not withdrawable cash or a proof of backing.
+
+<ResponseField name="kind" type="&quot;view&quot;" required>
+  Compact account view discriminator.
+</ResponseField>
+
+<ResponseField name="epoch" type="bigint (u64)" required>
+  Current account authority epoch.
+</ResponseField>
+
+<ResponseField name="cash" type="bigint (i128)" required>
+  Signed settled cash, in quote atoms.
+</ResponseField>
+
+<ResponseField name="funding" type="bigint (i128)" required>
+  Signed recognized unsettled funding, in quote atoms.
+</ResponseField>
+
+<ResponseField name="held" type="bigint (i128)" required>
+  Explicit reservations, in quote atoms. Not the entire risk requirement.
+</ResponseField>
+
+<ResponseField name="positions" type="Position[]" required>
+  Configured market ID, precision version, signed lots and remaining signed basis. See [positions](/api/reads/positions).
+</ResponseField>
+
+<ResponseField name="operations" type="Uint8Array[]" required>
+  Retained private operation IDs. Query [operation](/api/methods/operation) for receipts.
+</ResponseField>
+
+## Behavior
+
+View: epoch, signed cash/funding quote atoms, explicit held amount, signed position lots/remaining basis and retained operation IDs. Not withdrawable cash or proof of backing. Use [account reads](/api/reads/account) for optional qualified risk and valuation.
+
+## Errors and reconciliation
+
+[Typed errors](/api/errors) are returned inside the encrypted reply, not as
+field-specific HTTP status codes. Invalid fields, expired or out-of-scope authority,
+conflicting intent IDs and unavailable required evidence fail closed.
+
+For qualified risk and valuation, use [account reads](/api/reads/account).
+
+A delivery error or timeout is **not a rejection**. Reconnect with fresh attestation
+and reconcile the original operation ID before any economic retry.
+See [lifecycle](/api/lifecycle), [limits](/api/limits) and [availability](/status).

@@ -1,0 +1,34 @@
+---
+title: "Private reads and paging"
+description: "Bounded projections from the same witnessed journal."
+---
+
+All ten read families use signed `{ kind: 'read', query: { family, limit, cursor? } }` under owner or current READ-agent authority. Reads commit no financial change and spend no accepted-order budget.
+
+| Field | Meaning |
+| --- | --- |
+| family | account / positions / operations / openOrders / fills / funding / movements / grants / markets / updates |
+| limit | Integer 1–64 rows |
+| cursor | Optional 40 bytes; omitted/all-zero starts a snapshot |
+| reply.revision | Commitment to all permitted rows and query identity, not a global journal sequence |
+| reply.next | Next cursor; all-zero means no more **retained** rows |
+| reply.evaluatedAt | Qualified Cinder evaluation time in milliseconds |
+| reply.rows | Typed family rows; empty page valid |
+
+Nonzero cursor is revision[32] plus permitted-row offset u64 big-endian. Permissions filter rows before paging. Changed rows cause encrypted conflict; discard the old traversal and restart at zero. Do not splice revisions. Reconnection signs under a new binding/current authority; obtain a fresh zero-cursor snapshot.
+
+Revision excludes unrelated users' commits and global journal sequencing. Retention is bounded; journal exhaustion contains rather than silently pruning. End-of-pages is not proof of complete external venue history.
+
+Missing/unqualified fields are absent, not zero. committedAt/observedAt are qualified Cinder clocks, not invented exchange execution or block timestamps.
+
+## Checked SDK excerpt
+
+`family` is a documented ReadFamily; ctx/client have the same configured meaning as on command pages.
+
+```ts
+export async function read(client: PrivateClient, ctx: Context, family: ReadFamily,
+  cursor?: Uint8Array) {
+  return client.request({ id: ctx.id, epoch: ctx.epoch, expiresAt: ctx.expiresAt,
+    command: { kind: 'read', query: { family, limit: 32, cursor } } });
+}
+```

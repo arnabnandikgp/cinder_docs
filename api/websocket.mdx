@@ -1,0 +1,30 @@
+---
+title: "WebSocket commands and updates"
+description: "The same commands, plus bounded private replacement pages."
+---
+
+Use `connectWebChannel({ baseUrl, policy, core, transport: 'websocket' })`. The SDK first verifies attestation and completes the HTTP Noise handshake/confirmation, then upgrades `/v1/ws` at the same origin. Only the opaque confirmed handle travels before encrypted binary frames.
+
+All `client.request` commands retain the same signatures, authorization, stable IDs and journal. Text messages, subprotocols, compression, private URL fields and bearer/cookie headers are unsupported.
+
+## Subscribe
+
+Owner/current READ agent can subscribe to any documented read family with zero cursor. One subscription per channel; one iterator consumer. Imports/configuration follow the SDK quickstart.
+
+```ts
+export async function subscribe(client: PrivateClient, ctx: Context) {
+  const pages = await client.subscribe({ id: ctx.id, epoch: ctx.epoch,
+    expiresAt: ctx.expiresAt, query: { family: 'updates', limit: 64 } });
+  for await (const page of pages) {
+    // Replace this page. Do not treat it as an incremental fill feed.
+    // Fetch further rows using page.next; resnapshot on conflict or disconnect.
+    if (page.kind !== 'page') throw new Error('Resnapshot required');
+  }
+}
+```
+
+The first page arrives immediately. The service rechecks authorization, expiry and independent freshness every 500 ms, even when idle. Changed permitted revisions emit replacement pages; unrelated commits do not emit a global activity counter. Notifications coalesce—not every intervening fill or journal transition. Page retained histories to recover intervening changes.
+
+Returning the iterator closes the channel, even before its first next(). Missing/out-of-order delivery, revocation, expiry, witness loss or overflow closes/clears the stream. A thrown iterator or closure requires fresh attestation, current epoch and zero-cursor resnapshot; never resume cipher counters or replay trades automatically.
+
+[Limits](/api/limits) are finite and deliberately short. These are private account streams, not public ticks/candles/orderbook feeds.

@@ -1,0 +1,19 @@
+---
+title: "API overview"
+description: "A semantic SDK over encrypted binary carriers."
+---
+
+Customer methods are commands in one signed protocol, not independent REST JSON routes. Use `PrivateClient.request` or `subscribe` after verified connection. The SDK handles canonical binary encoding, Ed25519 signing, encryption and typed replies.
+
+| Carrier | Purpose |
+| --- | --- |
+| POST /v1/attestation | Fresh public challenge and signed enclave binding |
+| POST /v1/session | Noise handshake, confirmation and session disposal |
+| POST /v1/exchange | Encrypted signed command and encrypted reply |
+| GET /v1/ws (upgrade) | Confirmed-session binary commands and subscriptions |
+
+POST carriers use `application/octet-stream`; private account IDs, commands and signatures never belong in URLs/headers. Authorization/Cookie and compressed private ingress are refused. Browser access uses one exact configured origin and no cookies. HTTPS/WSS is required outside loopback tests.
+
+There is no bearer-token login, plain JSON exchange, automatic native signature forwarding or trusted server-side decrypting proxy. No public base URL is supplied. See [availability](/status).
+
+Eight original commands plus versioned `read` reach the same authorization, reservations and journal. HTTP and WebSocket are transport choices, not different financial engines. [WebSocket](/api/websocket) adds private replacement-page updates, not public chart/orderbook data.

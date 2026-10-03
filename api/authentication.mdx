@@ -1,0 +1,27 @@
+---
+title: "Authentication and signing"
+description: "Owner or scoped agent signatures inside a freshly attested session."
+---
+
+Every request binds:
+
+| Field | Type / role |
+| --- | --- |
+| domain.network, domain.deployment | Nonzero 32-byte approved IDs |
+| account | Nonzero 32-byte private account ID |
+| id | Nonzero 32-byte request ID, stable for one economic intent |
+| policy | Governed nonzero u32 policy version |
+| epoch | Current positive u64 account authority epoch |
+| signer | Ed25519 public key: configured owner or active scoped Cinder agent |
+| session | Verified channel binding; supplied by SDK |
+| expiresAt | u64 milliseconds; within channel and configured authentication lifetime |
+| command | Exact typed command |
+| signature | 64-byte Ed25519 signature over SDK canonical signing message |
+
+The SDK signs the `CINDER-API\0\x00\x01` fixed-width big-endian encoding. Do not sign displayed JSON, human-readable messages, a native venue payload or an arbitrary digest instead.
+
+Fresh attestation verifies AWS trust, approved PCR0/1/2 and manifest, network/deployment, challenge, boot, channel key, handle and expiry before private authentication. Policy and SDK/WASM code must come from independently trusted distribution.
+
+Current permissions, epoch and journal freshness are checked before lookup or idempotent replay. Economic identity includes domain/account/id/policy and exact command; changing the financial deadline changes the intent. A fresh session/authentication expiry may re-sign the same intent, but does not authorize a new economic attempt.
+
+No self-service signup or bearer tokens. Agent authority is limited by [grant](/api/methods/grant); native pooled credentials are never customer credentials.

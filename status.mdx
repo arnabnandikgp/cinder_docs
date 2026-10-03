@@ -1,0 +1,18 @@
+---
+title: "Availability"
+description: "Implementation, test evidence and live availability are different."
+---
+
+This reference describes the merged HTTP/WebSocket implementation. **No public trading endpoint, production client release or customer onboarding service is announced here.** There is no published npm SDK package.
+
+| Component | Evidence / availability |
+| --- | --- |
+| HTTP/WebSocket commands, private reads and subscriptions | Implemented; offline Node and actual-browser process tests |
+| Nitro confidential application | Earlier bounded disposable hardware tests; the changed web-enabled image still needs qualification |
+| Pacifica execution and Solana funding/custody components | Implemented with bounded research and offline fixtures; joined live brokerage qualification remains pending |
+| Recovery program | Implemented local checks; integrated independent claim delivery and venue wind-down remain pending |
+| Public customer trading / mainnet deposits | Not enabled or qualified by these docs |
+
+Current scope is preconfigured accounts, perps, pooled external execution, and the [documented commands](/api/overview). No self-service signup, isolated-margin product, trigger orders, atomic modify/batch orders, spot, referrals, public chart/orderbook API or native URL-only compatibility is included.
+
+The [implementation tracker](https://github.com/arnabnandikgp/cinder/blob/product/tee-v1/docs/implementation/TRACKER.md) records exact checkpoints. Test success is not an independent audit, complete solvency proof or guarantee of venue behavior.

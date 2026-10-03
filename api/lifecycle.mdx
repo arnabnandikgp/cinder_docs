@@ -1,0 +1,20 @@
+---
+title: "Lifecycle and reconciliation"
+description: "Durable acceptance, venue acknowledgement and final economics are distinct."
+---
+
+| outcome | Meaning |
+| --- | --- |
+| rejected | Recorded intent was not admitted |
+| accepted | Durable intent/reservations; not external execution |
+| dispatched | Signature/action may have escaped |
+| acknowledged | External acknowledgement; not fill completion |
+| partial | Actual attributed fill or beneficiary payment progress |
+| complete | Terminal state for that operation's semantics; does not mean every requested lot filled |
+| unknown | Exposure/outcome requires reconciliation |
+
+Receipts include `id`, immutable intent `digest`, `policy`, `outcome`, signed actual `filled` lots, beneficiary `paid`, charged payout `railFees`, declared `feeCap`, `possiblyExposed` and `allowPartial`. Fields unrelated to the command are zero/false; these are not portfolio totals. For orders, feeCap is absolute requested lots × fee-per-lot, not actual fees. For payouts it is the extra rail-fee cap.
+
+Grant/revoke/leverage can complete locally. Cancel receipts do not substitute for the original order's reconciled terminal evidence. Funding settlement is not a second funding earning.
+
+On timeout/disconnect: retain original ID and exact economics, freshly attest, sign with current authority and query that ID. Retry only when qualified evidence permits it; there is no automatic retry. Same ID with changed economics conflicts. A new transport correlation number does not create a new order or payout.

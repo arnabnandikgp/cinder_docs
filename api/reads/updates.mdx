@@ -1,0 +1,195 @@
+---
+title: "Account updates"
+description: "Replacement account, basic position and receipt snapshots."
+api: "POST /v1/exchange"
+playground: "none"
+---
+
+**Read family:** `updates` · **Permission:** owner or current READ agent.
+
+Replacement account, basic position and receipt snapshots. Results are private to the bound account. The same query is
+available over HTTP and [WebSocket](/api/websocket), including subscriptions.
+
+<Note>
+  These are signed SDK fields and decoded results, not a plaintext JSON HTTP body.
+  The shared carrier accepts encrypted `application/octet-stream`.
+</Note>
+
+<RequestExample>
+```ts SDK request
+const response = await client.request({
+  id: ctx.id,
+  epoch: ctx.epoch,
+  expiresAt: ctx.expiresAt,
+  command: {
+    kind: 'read',
+    query: { family: 'updates', limit: 32 },
+  },
+});
+```
+</RequestExample>
+
+<ResponseExample>
+```ts Decoded page
+({
+  kind: 'page',
+  family: 'updates',
+  revision: snapshotRevision,
+  next: new Uint8Array(40),
+  evaluatedAt: observedAt,
+  rows: [
+    { kind: 'account', epoch: ctx.epoch, cash: 100n, funding: 0n, held: 0n },
+    { kind: 'position', market: ctx.market, precision: 1, lots: 2n, basis: 200n },
+  ],
+})
+```
+
+```ts Stale cursor error
+({ kind: 'error', code: 'conflict' })
+```
+</ResponseExample>
+
+## Request fields
+
+Use the configured [client and envelope](/api/authentication). Each request supplies
+`id`, current `epoch` and authentication `expiresAt`, as shown in the example.
+
+<ParamField body="command.kind" type="&quot;read&quot;" required>
+  Read-command discriminator.
+</ParamField>
+
+<ParamField body="command.query.family" type="&quot;updates&quot;" required>
+  Selects this exact private projection.
+</ParamField>
+
+<ParamField body="command.query.limit" type="number" required>
+  Integer from 1 to 64 rows. The example requests 32.
+</ParamField>
+
+<ParamField body="command.query.cursor" type="Uint8Array (40 bytes)">
+  Omit or use all-zero bytes to start. For another page, use the prior page’s `next` under the same snapshot revision.
+</ParamField>
+
+## Response fields
+
+Illustrative decoded SDK values are shown at the right; absent optional fields
+mean unavailable, not zero. Empty `rows` is valid.
+
+<ResponseField name="kind" type="&quot;page&quot;" required>
+  Paged-response discriminator.
+</ResponseField>
+
+<ResponseField name="family" type="&quot;updates&quot;" required>
+  The requested family.
+</ResponseField>
+
+<ResponseField name="revision" type="Uint8Array (32 bytes)" required>
+  Commitment to the permitted snapshot and query identity, not a global activity counter.
+</ResponseField>
+
+<ResponseField name="next" type="Uint8Array (40 bytes)" required>
+  Next cursor; all-zero means no more retained rows.
+</ResponseField>
+
+<ResponseField name="evaluatedAt" type="bigint (u64)" required>
+  Qualified Cinder evaluation time, in milliseconds.
+</ResponseField>
+
+<ResponseField name="rows" type="ReadRow[]" required>
+  At most the requested limit.
+  <Expandable title="Account updates row fields">
+<ResponseField name="kind" type="&quot;account&quot; | &quot;position&quot; | &quot;receipt&quot;" required>
+  Selects the row shape. A page can contain more than one shape.
+</ResponseField>
+
+<Expandable title="Account rows">
+<ResponseField name="epoch" type="bigint (u64)" required>
+  Current authority epoch.
+</ResponseField>
+
+<ResponseField name="cash" type="bigint (i128)" required>
+  Signed settled cash, in quote atoms.
+</ResponseField>
+
+<ResponseField name="funding" type="bigint (i128)" required>
+  Signed recognized unsettled funding, in quote atoms.
+</ResponseField>
+
+<ResponseField name="held" type="bigint (i128)" required>
+  Explicit reserved amount, in quote atoms.
+</ResponseField>
+
+<ResponseField name="risk" type="Risk">
+  Optional qualified risk context.
+  <Expandable title="risk fields">
+<ResponseField name="equity" type="bigint (i128)" required>
+  Conservative risk equity.
+</ResponseField>
+
+<ResponseField name="initial" type="bigint (i128)" required>
+  Current initial-margin requirement.
+</ResponseField>
+
+<ResponseField name="maintenance" type="bigint (i128)" required>
+  Current maintenance-margin requirement.
+</ResponseField>
+
+<ResponseField name="outcomeRequirement" type="bigint (i128)" required>
+  Requirement across qualified pending outcomes.
+</ResponseField>
+
+<ResponseField name="otherHeld" type="bigint (i128)" required>
+  Other amounts held by the risk calculation.
+</ResponseField>
+
+<ResponseField name="free" type="bigint (i128)" required>
+  Risk free collateral; not an unconditional instantly payable amount.
+</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="accountingEquity" type="bigint (i128)">
+  Optional marked accounting equity.
+</ResponseField>
+</Expandable>
+
+<Expandable title="Basic position rows">
+<ResponseField name="market" type="Uint8Array (32 bytes)" required>
+  Configured market ID.
+</ResponseField>
+
+<ResponseField name="precision" type="number (u32)" required>
+  Market precision **version**, not decimal places.
+</ResponseField>
+
+<ResponseField name="lots" type="bigint (i64)" required>
+  Signed remaining lots: positive long, negative short.
+</ResponseField>
+
+<ResponseField name="basis" type="bigint (i128)" required>
+  Signed remaining entry value in quote atoms, not a displayed average price.
+</ResponseField>
+</Expandable>
+
+<Expandable title="Receipt rows">
+<ResponseField name="receipt" type="Receipt" required>
+  Current durable [receipt](/api/lifecycle).
+</ResponseField>
+</Expandable>
+  </Expandable>
+</ResponseField>
+
+## Behavior
+
+Use as an HTTP snapshot or a WebSocket subscription. Each delivered page replaces the selected page; it is not a delta or every journal transition. Position rows here omit the optional valuation/leverage of [positions](/api/reads/positions). Page further rows and query the selected retained histories when needed.
+
+## Paging and errors
+
+Read queries do not change financial state or consume order budgets.
+Permissions filter rows **before** paging. Changed permitted rows return encrypted
+`conflict`; restart at zero instead of combining revisions. End-of-pages covers
+retained rows, not complete external venue history.
+
+See [paging](/api/reads/paging), [errors](/api/errors), [limits](/api/limits)
+and [availability](/status). A disconnected subscription needs fresh attestation,
+current authority and a replacement snapshot.

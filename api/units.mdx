@@ -1,0 +1,22 @@
+---
+title: "Exact units"
+description: "Integer lots, ticks and quote atoms—not floating-point money."
+---
+
+| Quantity | Representation |
+| --- | --- |
+| IDs / hashes / public keys | 32-byte Uint8Array; IDs nonzero |
+| Quantity | Signed i64 bigint lots |
+| Execution prices / marks | u64 bigint ticks in the configured market unit |
+| Cash, basis, funding, fees, payout amounts | i128 bigint quote atoms; field-specific signs/positivity |
+| Authority/deadlines/counts | u64 bigint; time is qualified/injected milliseconds |
+| Leverage | u64 bigint ×10,000 multiplier; 10,000 = 1× |
+| Precision | u32 **version**, not number of decimal places |
+| Cursor | 40-byte Uint8Array |
+| Page revision | 32-byte commitment |
+
+[Market metadata](/api/reads/markets) supplies configured unit, quote unit and exact rational conversion: signed fill value = lots × ticks × numerator / denominator in quote atoms. Whole-fill conversion must satisfy the governed exactness rules. Never infer Pacifica/display decimals from the precision-version number.
+
+Remaining basis is signed entry value, not display average price. Cash excludes unsettled funding; account equity, free margin and immediately payable funds differ.
+
+The wire uses big-endian integers with checked range/length decoding. SDK numeric quantities are bigint; do not round-trip them through JavaScript Number or JSON number. Example amounts are normalized fixtures, not production policy.

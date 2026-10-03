@@ -1,0 +1,10 @@
+---
+title: "Agents"
+description: "Delegate a strategy, not custody."
+---
+
+A Cinder agent is a separate Ed25519 key authorized for your private account. It is not a native venue agent and does not receive pooled execution keys.
+
+An owner [grant](/api/methods/grant) permits READ, TRADE and/or CANCEL for one market with expiry, per-order lot/fee caps and a lifetime accepted-order budget. An agent cancels only its own admitted orders. READ permits authorized account views; the active-grant view exposes only that agent's grant.
+
+Agents cannot withdraw, choose recipients, set leverage, redelegate or administer the pool. [Revocation](/api/methods/revoke) advances the account epoch and invalidates all old grants. It does not undo an exposed native order; cancellation and reconciliation remain separate.

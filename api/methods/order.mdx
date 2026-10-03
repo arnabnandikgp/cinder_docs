@@ -1,0 +1,165 @@
+---
+title: "Order"
+description: "Admit one bounded order; acceptance is not execution."
+api: "POST /v1/exchange"
+playground: "none"
+---
+
+**Permission:** Owner or scoped TRADE agent.
+
+Admit one bounded order; acceptance is not execution. The same command is available over [WebSocket](/api/websocket).
+
+<Note>
+  Fields below describe the SDK request **before encryption** and the decoded reply.
+  The HTTP body is encrypted binary `application/octet-stream`, not JSON.
+  Use a verified [SDK client](/quickstart); the interactive playground is disabled.
+</Note>
+
+<RequestExample>
+```ts SDK request
+const response = await client.request({ id: ctx.id, epoch: ctx.epoch, expiresAt: ctx.expiresAt,
+    command: { kind: 'order', market: ctx.market, lots: 2n,
+      minimum: 90n, maximum: 110n, fee: 1n, tif: 'IOC',
+      reduceOnly: false, goodUntil: ctx.goodUntil } });
+```
+</RequestExample>
+
+<ResponseExample>
+```ts Decoded receipt
+({
+  kind: 'receipt',
+  id: ctx.id,
+  digest: recordedIntentDigest,
+  policy: approvedPolicyVersion,
+  outcome: 'accepted',
+  filled: 0n,
+  paid: 0n,
+  railFees: 0n,
+  feeCap: 2n,
+  possiblyExposed: false,
+  allowPartial: false,
+})
+```
+
+```ts Encrypted application error
+({ kind: 'error', code: 'unauthorized' })
+```
+</ResponseExample>
+
+## Request fields
+
+The client supplies the configured domain, account, policy, signer and verified
+session binding, and signs the canonical [envelope](/api/authentication).
+
+<ParamField body="id" type="Uint8Array (32 bytes)" required>
+  Nonzero private request ID. Retain it for an exact retry; use a distinct ID for a different intent.
+</ParamField>
+
+<ParamField body="epoch" type="bigint (u64)" required>
+  Current account authority epoch.
+</ParamField>
+
+<ParamField body="expiresAt" type="bigint (u64)" required>
+  Authentication expiry in milliseconds, within the verified session and deployment limits.
+</ParamField>
+
+<ParamField body="command.kind" type="&quot;order&quot;" required>
+  Command discriminator.
+</ParamField>
+
+<ParamField body="command.market" type="Uint8Array (32 bytes)" required>
+  Governed market and precision.
+</ParamField>
+
+<ParamField body="command.lots" type="bigint (i64)" required>
+  Nonzero: positive buy, negative sell.
+</ParamField>
+
+<ParamField body="command.minimum" type="bigint (u64)" required>
+  Positive inclusive lower execution-price bound, in ticks.
+</ParamField>
+
+<ParamField body="command.maximum" type="bigint (u64)" required>
+  Positive inclusive upper execution-price bound, in ticks; must be at least `minimum`.
+</ParamField>
+
+<ParamField body="command.fee" type="bigint (i128)" required>
+  Nonnegative maximum quote-atom fee per lot, not percentage or total fee. `abs(lots) × fee` must fit i128.
+</ParamField>
+
+<ParamField body="command.tif" type="&quot;GTC&quot; | &quot;ALO&quot; | &quot;IOC&quot;" required>
+  Good-til-cancelled, add-liquidity-only or bounded immediate-or-cancel.
+</ParamField>
+
+<ParamField body="command.reduceOnly" type="boolean" required>
+  Must not open/reverse the private customer's position.
+</ParamField>
+
+<ParamField body="command.goodUntil" type="bigint (u64)" required>
+  Financial dispatch expiry in milliseconds, immutable on economic retry.
+</ParamField>
+
+## Response fields
+
+The example uses illustrative quote atoms and configured IDs, not live venue data.
+A receipt records operation progress; acceptance is not execution or payment.
+
+<ResponseField name="kind" type="&quot;receipt&quot;" required>
+  Response discriminator.
+</ResponseField>
+
+<ResponseField name="id" type="Uint8Array (32 bytes)" required>
+  Durable operation ID. For an operation lookup, this is the target ID, not the query ID.
+</ResponseField>
+
+<ResponseField name="digest" type="Uint8Array (32 bytes)" required>
+  Commitment to the immutable economic intent.
+</ResponseField>
+
+<ResponseField name="policy" type="number (u32)" required>
+  Governed policy version.
+</ResponseField>
+
+<ResponseField name="outcome" type="Outcome" required>
+  `rejected`, `accepted`, `dispatched`, `acknowledged`, `partial`, `complete` or `unknown`. See [lifecycle](/api/lifecycle).
+</ResponseField>
+
+<ResponseField name="filled" type="bigint (i64)" required>
+  Actual attributed signed lots, not requested quantity.
+</ResponseField>
+
+<ResponseField name="paid" type="bigint (i128)" required>
+  Qualified net payment to the beneficiary, in quote atoms.
+</ResponseField>
+
+<ResponseField name="railFees" type="bigint (i128)" required>
+  Actual customer-paid payout rail fees; not ordinary trading fees.
+</ResponseField>
+
+<ResponseField name="feeCap" type="bigint (i128)" required>
+  Declared fee cap: absolute requested lots × fee-per-lot for orders, or extra rail-fee cap for payouts. Not the amount charged.
+</ResponseField>
+
+<ResponseField name="possiblyExposed" type="boolean" required>
+  Whether the operation may have escaped for external execution. False alone is not a final settlement guarantee.
+</ResponseField>
+
+<ResponseField name="allowPartial" type="boolean" required>
+  The recorded payout partial-dispatch consent. False for unrelated commands.
+</ResponseField>
+
+## Behavior
+
+Receipt with declared total feeCap = abs(lots) × fee and actual signed filled lots. feeCap is not charged fees; actual ordinary-fill costs appear in [fills](/api/reads/fills). Admission requires joined risk and reservations. Agent limits/budget apply. IOC may partially fill or not fill. Native capability must also be qualified; no unbounded market-order path.
+
+## Errors and reconciliation
+
+[Typed errors](/api/errors) are returned inside the encrypted reply, not as
+field-specific HTTP status codes. Invalid fields, expired or out-of-scope authority,
+conflicting intent IDs and unavailable required evidence fail closed.
+
+
+
+A delivery error or timeout is **not a rejection**. Reconnect with fresh attestation
+and reconcile the original operation ID before any economic retry.
+See [lifecycle](/api/lifecycle), [limits](/api/limits) and [availability](/status).

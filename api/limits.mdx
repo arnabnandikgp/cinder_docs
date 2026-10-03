@@ -1,0 +1,25 @@
+---
+title: "Limits and reconnect"
+description: "Finite sessions, bounded work and fail-closed delivery."
+---
+
+| Limit | Current implementation |
+| --- | --- |
+| Attested sessions / upgraded sockets | 8 |
+| Session lifetime | 120 seconds maximum |
+| Authenticated records per direction | 128, including confirmation, response chunks and updates |
+| Handshake / command / initial-subscription / partial-frame delivery | 5 seconds |
+| Concurrent SDK commands | 1; serialize |
+| Subscription per channel / consumers | 1 / 1 |
+| Read page | 1–64 rows |
+| Clear signed application request | ≤1 KiB |
+| Clear application reply | ≤1 MiB, encrypted in bounded chunks |
+| Consumer queue | 32 complete updates or 1 MiB, first limit wins |
+| Subscription recheck cadence | 500 ms |
+| Retained journal | 4,096 records / 64 MiB; exhaustion contains |
+
+The record budget is not 128 trades: confirmation, multi-chunk responses and updates consume it. Reattest and resnapshot before using an expired/exhausted channel. Deployment authentication/grant durations and financial policies may impose tighter bounds.
+
+Queue overflow is an error/closure, not permission to silently drop and continue. Delivery does not automatically retry economic requests. Public HTTP rejection/rate status alone cannot settle a private operation's outcome.
+
+Limits are implementation bounds, not native venue rate-limit allocations or promised production throughput.

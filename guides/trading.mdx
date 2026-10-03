@@ -1,0 +1,12 @@
+---
+title: "Trading"
+description: "Bounded orders, actual fills and honest lifecycle reporting."
+---
+
+An [order](/api/methods/order) specifies signed lots, execution-price bounds, fee cap per lot, time-in-force and financial expiry. GTC, add-liquidity-only (ALO) and bounded immediate-or-cancel (IOC) are supported. IOC is not an unbounded market-order or full-fill guarantee.
+
+Actual attributed fills change positions and entry basis. Partial fills, repeated entries, reductions and reversals differ from admission and acknowledgement. Funding recognition, settlement and fees are separate postings.
+
+Private reduce-only constrains your position, not simply the venue's net position. A [cancel](/api/methods/cancel) can race a fill. After timeout, reconnect and [query the original operation](/api/methods/operation); do not create a new economic ID.
+
+Select leverage up to the governed market cap. This does not create native isolated margin. Server-side stops, TP/SL, batch and atomic replacement are outside this interface.

@@ -1,0 +1,155 @@
+---
+title: "Configured markets"
+description: "Governed market units, exact quote conversion and capability mask."
+api: "POST /v1/exchange"
+playground: "none"
+---
+
+**Read family:** `markets` · **Permission:** owner or current READ agent.
+
+Governed market units, exact quote conversion and capability mask. Results are private to the bound account. The same query is
+available over HTTP and [WebSocket](/api/websocket), including subscriptions.
+
+<Note>
+  These are signed SDK fields and decoded results, not a plaintext JSON HTTP body.
+  The shared carrier accepts encrypted `application/octet-stream`.
+</Note>
+
+<RequestExample>
+```ts SDK request
+const response = await client.request({
+  id: ctx.id,
+  epoch: ctx.epoch,
+  expiresAt: ctx.expiresAt,
+  command: {
+    kind: 'read',
+    query: { family: 'markets', limit: 32 },
+  },
+});
+```
+</RequestExample>
+
+<ResponseExample>
+```ts Decoded page
+({
+  kind: 'page',
+  family: 'markets',
+  revision: snapshotRevision,
+  next: new Uint8Array(40),
+  evaluatedAt: observedAt,
+  rows: [
+    {
+      kind: 'market', market: ctx.market, precision: 1,
+      quote: quoteUnitId, quotePrecision: 1, numerator: 1n,
+      denominator: 1n, modes: 7, leverageCap: 20_000n,
+    },
+  ],
+})
+```
+
+```ts Stale cursor error
+({ kind: 'error', code: 'conflict' })
+```
+</ResponseExample>
+
+## Request fields
+
+Use the configured [client and envelope](/api/authentication). Each request supplies
+`id`, current `epoch` and authentication `expiresAt`, as shown in the example.
+
+<ParamField body="command.kind" type="&quot;read&quot;" required>
+  Read-command discriminator.
+</ParamField>
+
+<ParamField body="command.query.family" type="&quot;markets&quot;" required>
+  Selects this exact private projection.
+</ParamField>
+
+<ParamField body="command.query.limit" type="number" required>
+  Integer from 1 to 64 rows. The example requests 32.
+</ParamField>
+
+<ParamField body="command.query.cursor" type="Uint8Array (40 bytes)">
+  Omit or use all-zero bytes to start. For another page, use the prior page’s `next` under the same snapshot revision.
+</ParamField>
+
+## Response fields
+
+Illustrative decoded SDK values are shown at the right; absent optional fields
+mean unavailable, not zero. Empty `rows` is valid.
+
+<ResponseField name="kind" type="&quot;page&quot;" required>
+  Paged-response discriminator.
+</ResponseField>
+
+<ResponseField name="family" type="&quot;markets&quot;" required>
+  The requested family.
+</ResponseField>
+
+<ResponseField name="revision" type="Uint8Array (32 bytes)" required>
+  Commitment to the permitted snapshot and query identity, not a global activity counter.
+</ResponseField>
+
+<ResponseField name="next" type="Uint8Array (40 bytes)" required>
+  Next cursor; all-zero means no more retained rows.
+</ResponseField>
+
+<ResponseField name="evaluatedAt" type="bigint (u64)" required>
+  Qualified Cinder evaluation time, in milliseconds.
+</ResponseField>
+
+<ResponseField name="rows" type="ReadRow[]" required>
+  At most the requested limit.
+  <Expandable title="Configured markets row fields">
+<ResponseField name="kind" type="&quot;market&quot;" required>
+  Market-row discriminator.
+</ResponseField>
+
+<ResponseField name="market" type="Uint8Array (32 bytes)" required>
+  Configured market ID.
+</ResponseField>
+
+<ResponseField name="precision" type="number (u32)" required>
+  Market precision version, not decimal places.
+</ResponseField>
+
+<ResponseField name="quote" type="Uint8Array (32 bytes)" required>
+  Configured quote-unit ID.
+</ResponseField>
+
+<ResponseField name="quotePrecision" type="number (u32)" required>
+  Quote-unit precision version.
+</ResponseField>
+
+<ResponseField name="numerator" type="bigint (u64)" required>
+  Positive numerator in exact quote-atom-per-lot-times-tick conversion.
+</ResponseField>
+
+<ResponseField name="denominator" type="bigint (u64)" required>
+  Positive denominator in the same conversion.
+</ResponseField>
+
+<ResponseField name="modes" type="number" required>
+  Supported mode mask, currently 7 for GTC, ALO and IOC.
+</ResponseField>
+
+<ResponseField name="leverageCap" type="bigint (u64)">
+  Optional maximum multiplier scaled by 10,000.
+</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Behavior
+
+Conversion is lots × ticks × numerator / denominator in quote atoms, subject to governed exactness rules. This is kernel configuration, not public listings, ticker labels, book depth or chart data. Native/display mappings require approved configuration; a mode bit alone does not qualify live native execution.
+
+## Paging and errors
+
+Read queries do not change financial state or consume order budgets.
+Permissions filter rows **before** paging. Changed permitted rows return encrypted
+`conflict`; restart at zero instead of combining revisions. End-of-pages covers
+retained rows, not complete external venue history.
+
+See [paging](/api/reads/paging), [errors](/api/errors), [limits](/api/limits)
+and [availability](/status). A disconnected subscription needs fresh attestation,
+current authority and a replacement snapshot.

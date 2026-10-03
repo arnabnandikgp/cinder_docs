@@ -1,0 +1,61 @@
+---
+title: "SDK quickstart"
+description: "Connect a preconfigured account through the confidential web SDK."
+---
+
+Read [availability](/status) first. You need an independently approved client build and release policy, configured private account, network/deployment IDs, policy version, current authority epoch, and an Ed25519 wallet or scoped agent signer. Connecting a wallet alone does not create an account.
+
+## Obtain the client
+
+Source is in `clients/private`; the reviewed web build produces `sdk.js`, `channel.js` and `channel_bg.wasm` under `tools/web-channel/pkg`. These are not published npm packages. Maintainers reproduce it with the [tracked preparation and qualification instructions](https://github.com/arnabnandikgp/cinder/blob/product/tee-v1/tools/web-channel/README.md).
+
+Do not distribute fixture bundles, fixture roots or test release policies. Obtain code and policy independently of the relay you verify.
+
+## Connect and query
+
+This excerpt assumes those three artifacts are in your application. Variables are supplied by a reviewed deployment; there is no default live URL.
+
+```ts
+import init, * as core from './channel.js';
+import { connectWebChannel, PrivateClient } from './sdk.js';
+await init();
+
+const channel = await connectWebChannel({
+  baseUrl: configuredHttpsOrigin,
+  policy: independentlyApprovedRelease,
+  core,
+});
+const client = new PrivateClient(channel, walletSigner, {
+  domain: approvedDomain,
+  account: privateAccountId,
+  policy: approvedPolicyVersion,
+});
+const result = await client.request({
+  id: queryId,
+  epoch: currentAccountEpoch,
+  expiresAt: authExpiry,
+  command: { kind: 'view' },
+});
+if (result.kind === 'error') {
+  // Handle the encrypted error; do not invent success.
+}
+```
+
+`walletSigner` supplies a 32-byte public key and `signMessage(bytes)` returning a 64-byte Ed25519 signature. The SDK binds it to the verified session. `authExpiry` must fit both the channel expiry and the deployment's authentication lifetime. Never pass the wallet's private key to the relay.
+
+Set `transport: 'websocket'` for socket commands/subscriptions; HTTP is default. Serialize requests. See [authentication](/api/authentication), [units](/api/units) and [unknown outcomes](/api/lifecycle).
+
+## Reference examples
+
+API pages reuse this verified `client`. Their `ctx` is your application's input
+context, not an SDK-generated object: `id`, `epoch` and `expiresAt` are the request
+values above; `market` is a configured market ID; `goodUntil` is the financial
+deadline. Cancel/lookup examples use `originalOrderId` and a distinct
+`cancelAttemptId`. Grant examples use the agent's `agentPublicKey` and
+`agentExpiresAt`; import `READ`, `TRADE` and `CANCEL` from `sdk.js`.
+
+Decoded-response examples are illustrative TypeScript objects, not JSON to submit.
+`recordedIntentDigest`, `snapshotRevision` and `quoteUnitId` stand for 32-byte
+values from the corresponding record/configuration; `observedAt` is a qualified
+millisecond timestamp. Integer amounts illustrate encoding, not live prices or
+approved leverage/fee policy.

@@ -1,0 +1,14 @@
+---
+title: "Deposits and withdrawals"
+description: "Separate customer credit, collateral routing and final payment."
+---
+
+The route is Solana wallet → Cinder program vault → supported broker funding route → venue, and back. Intermediate venue funding authority remains a custody boundary: the Solana program does not control ordinary venue HTTP actions.
+
+A qualified final deposit credits your entitlement once. Moving that collateral between Cinder locations does not credit it again. Cinder allocates working collateral, not full perp notional, and can retain useful venue collateral between trades.
+
+The owner-only [payout](/api/methods/payout) targets the configured token account. It reserves net amount plus extra fee cap. Genuine free collateral may be withdrawn with open positions, subject to pending outcomes, margin, capital and location liquidity—not just displayed cash.
+
+Acceptance or a source debit is not payment. Qualified beneficiary evidence discharges the claim. Partial payment requires consent; solvent queuing is not insolvency priority.
+
+Deposits and payments are public on Solana. No live deposit address is announced here.

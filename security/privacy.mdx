@@ -1,0 +1,12 @@
+---
+title: "Privacy and transport"
+description: "Private application data terminates inside the confidential service."
+---
+
+The SDK verifies fresh Nitro attestation against an independently approved release, then establishes authenticated encryption to the enclave. Signed commands and private replies are encrypted before crossing the parent relay; the parent is not a plaintext trading backend.
+
+Balances, positions, orders and history are private. Deposits and payouts are public. Venues observe pooled account activity; privacy does not hide all metadata or transfers.
+
+A hostile website can steal data before encryption. Obtain the SDK/WASM core and release policy through trusted distribution, not the attestation response.
+
+The selected Noise implementation has an unresolved opaque-secret erasure limitation. Browser teardown is not memory-erasure proof. Changed-image hardware qualification, production governance and independent review remain release gates. See [availability](/status) and [verification](/security/verification).
