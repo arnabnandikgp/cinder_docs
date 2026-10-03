@@ -3,7 +3,9 @@
   "name": "Cinder",
   "theme": "mint",
   "colors": {
-    "primary": "#FF6A1A"
+    "primary": "#0051FE",
+    "light": "#6093FF",
+    "dark": "#0051FE"
   },
   "api": {
     "playground": {
@@ -88,5 +90,20 @@
         ]
       }
     ]
+  },
+  "background": {
+    "color": {
+      "light": "#FAFAFB",
+      "dark": "#0B0B0B"
+    }
+  },
+  "logo": {
+    "light": "/images/cinder-logo-light.svg",
+    "dark": "/images/cinder-logo-dark.svg"
+  },
+  "favicon": "/images/cinder-favicon.png",
+  "appearance": {
+    "default": "dark",
+    "strict": false
   }
 }
