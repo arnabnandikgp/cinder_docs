@@ -1,0 +1,78 @@
+{
+  "$schema": "https://mintlify.com",
+  "name": "Acme Corp",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "favicon": "/favicon.png",
+  "colors": {
+    "primary": "#0D9488",
+    "light": "#2DD4BF",
+    "dark": "#115E59",
+    "background": {
+      "light": "#FFFFFF",
+      "dark": "#0F172A"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "Support",
+      "url": "https://example.com"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Sign Up",
+    "url": "https://example.com"
+  },
+  "tabs": [
+    {
+      "name": "Guides",
+      "id": "guides"
+    },
+    {
+      "name": "API Reference",
+      "id": "api"
+    }
+  ],
+  "navigation": [
+    {
+      "tab": "guides",
+      "group": "Getting Started",
+      "pages": [
+        "introduction",
+        "quickstart"
+      ]
+    },
+    {
+      "tab": "guides",
+      "group": "Core Concepts",
+      "pages": [
+        "essentials/features",
+        "essentials/configuration"
+      ]
+    },
+    {
+      "tab": "api",
+      "group": "API Integration",
+      "pages": [
+        "api-reference/overview",
+        "api-reference/authentication"
+      ]
+    },
+    {
+      "tab": "api",
+      "group": "Endpoints",
+      "pages": [
+        "api-reference/users/get-user",
+        "api-reference/users/create-user"
+      ]
+    }
+  ],
+  "openapi": "openapi.yaml",
+  "footerSocials": {
+    "x": "https://x.com",
+    "github": "https://github.com"
+  }
+}
+
