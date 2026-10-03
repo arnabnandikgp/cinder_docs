@@ -3,8 +3,10 @@
 This directory contains **37 MDX content pages**, with Mintlify-compatible
 frontmatter and native field/example components. Copy the pages and folder structure
 into your existing Mintlify documentation repository. Add their extensionless
-paths to that repository's navigation configuration. No new site, package,
-application, hosting account or deployment configuration is included here.
+paths to that repository's navigation configuration. The user-supplied `docs.json`
+is kept alongside them for copying; no standalone application or new tooling is
+required. This entire directory is local and excluded from this repository's Git
+tracking. Do not stage it with implementation changes.
 
 Suggested navigation:
 
@@ -20,7 +22,8 @@ Suggested navigation:
 
 Links use Mintlify root-relative, extensionless page routes. If you nest the
 content under a prefix in your docs repository, adjust those links accordingly.
-Command/read pages use `api: "POST /v1/exchange"` for the real shared carrier and
+Command/read pages show `POST /v1/exchange` as ordinary text, not `api:`
+frontmatter that requires a public server URL. They retain
 `playground: "none"`: the request fields describe SDK objects, not a directly
 callable JSON body. `RequestExample` and `ResponseExample` show examples alongside
 the `ParamField`/`ResponseField` schemas; `Expandable` groups nested fields.
