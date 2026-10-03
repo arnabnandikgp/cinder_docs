@@ -1,20 +1,50 @@
 ---
 title: "Lifecycle and reconciliation"
-description: "Durable acceptance, venue acknowledgement and final economics are distinct."
+description: "Interpret receipts and recover from uncertain delivery."
 ---
 
-| outcome | Meaning |
+## Operation status
+
+| `outcome` | Meaning |
 | --- | --- |
-| rejected | Recorded intent was not admitted |
-| accepted | Durable intent/reservations; not external execution |
-| dispatched | Signature/action may have escaped |
-| acknowledged | External acknowledgement; not fill completion |
-| partial | Actual attributed fill or beneficiary payment progress |
-| complete | Terminal state for that operation's semantics; does not mean every requested lot filled |
-| unknown | Exposure/outcome requires reconciliation |
+| `rejected` | The recorded intent was not admitted. |
+| `accepted` | The intent and reservations are recorded; external execution has not been established. |
+| `dispatched` | An action or signature may have reached external execution. |
+| `acknowledged` | An external acknowledgement was received; fill completion is not established. |
+| `partial` | Some attributed fill or confirmed recipient payment has occurred. |
+| `complete` | The operation has finished under its own rules. An IOC order need not fill every requested lot. |
+| `unknown` | Execution or payment requires further reconciliation. |
 
-Receipts include `id`, immutable intent `digest`, `policy`, `outcome`, signed actual `filled` lots, beneficiary `paid`, charged payout `railFees`, declared `feeCap`, `possiblyExposed` and `allowPartial`. Fields unrelated to the command are zero/false; these are not portfolio totals. For orders, feeCap is absolute requested lots × fee-per-lot, not actual fees. For payouts it is the extra rail-fee cap.
+Grant, revoke and leverage changes can complete without venue execution. A cancel receipt is separate from the original order's final execution record.
 
-Grant/revoke/leverage can complete locally. Cancel receipts do not substitute for the original order's reconciled terminal evidence. Funding settlement is not a second funding earning.
+## Shared receipt fields
 
-On timeout/disconnect: retain original ID and exact economics, freshly attest, sign with current authority and query that ID. Retry only when qualified evidence permits it; there is no automatic retry. Same ID with changed economics conflicts. A new transport correlation number does not create a new order or payout.
+| Field | Meaning |
+| --- | --- |
+| `id` | The durable operation ID. An operation lookup returns the target ID, not the lookup request's ID. |
+| `digest` | A 32-byte commitment to the immutable economic intent. |
+| `policy` | The policy version associated with that intent. |
+| `outcome` | The operation status above. |
+| `filled` | Actual attributed signed lots. For a cancel receipt, this reflects the target order's fills. |
+| `paid` | Confirmed net recipient payment, in quote atoms. |
+| `railFees` | Customer-paid withdrawal-transfer fees, not trading fees. |
+| `feeCap` | Declared total fee limit: `abs(lots) × fee` for an order, or the additional transfer-fee limit for a payout. It is not the amount charged. |
+| `possiblyExposed` | Whether an action may have reached external execution. |
+| `allowPartial` | Recorded partial-payment consent for a payout; false for unrelated commands. |
+
+Fields that do not apply to an operation use zero or false. Receipts describe an operation, not portfolio totals. Confirmed funding settlement moves an already recognized amount into settled cash; it is not a second earning.
+
+## Timeout or disconnect
+
+1. Retain the original request ID and exact command.
+2. Connect through a freshly attested session using the current authority epoch.
+3. [Look up that operation](/api/methods/operation).
+4. Reconcile its receipt and account history before submitting another execution attempt.
+
+A delivery error is not a rejection. A new request ID represents a new intent and can cause duplicate execution if the earlier request succeeded.
+
+An authorized `not-found` lookup alone is not enough to resolve an uncertain external outcome. Keep the original ID and ask the service operator to reconcile the account and venue history before retrying execution. There is no automatic economic retry.
+
+## Order deadlines
+
+`expiresAt` limits authentication. An order's `goodUntil` limits dispatch. Neither is a timed cancellation instruction for an already dispatched resting order. Use [cancel](/api/methods/cancel) and confirm the original order's final state.

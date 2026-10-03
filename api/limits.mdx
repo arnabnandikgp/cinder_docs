@@ -1,25 +1,29 @@
 ---
 title: "Limits and reconnect"
-description: "Finite sessions, bounded work and fail-closed delivery."
+description: "Session capacity, request bounds and reconnect behavior."
 ---
 
-| Limit | Current implementation |
+| Limit | Scope and value |
 | --- | --- |
-| Attested sessions / upgraded sockets | 8 |
-| Session lifetime | 120 seconds maximum |
-| Authenticated records per direction | 128, including confirmation, response chunks and updates |
-| Handshake / command / initial-subscription / partial-frame delivery | 5 seconds |
-| Concurrent SDK commands | 1; serialize |
-| Subscription per channel / consumers | 1 / 1 |
-| Read page | 1–64 rows |
-| Clear signed application request | ≤1 KiB |
-| Clear application reply | ≤1 MiB, encrypted in bounded chunks |
-| Consumer queue | 32 complete updates or 1 MiB, first limit wins |
-| Subscription recheck cadence | 500 ms |
-| Retained journal | 4,096 records / 64 MiB; exhaustion contains |
+| Attested sessions | 8 per relay service instance, shared across accounts; pending handshakes count. |
+| Enclave ingress connections | 8 per private service listener. This is separate from an account's permissions. |
+| Upgraded WebSocket connections | 8 per relay instance, shared across accounts. |
+| Session lifetime | At most 120 seconds per session. |
+| Authenticated records | 128 per direction per session, including confirmation, reply chunks and updates. |
+| Handshake, command, first subscription response and partial-frame delivery | 5 seconds per delivery operation. |
+| Concurrent SDK commands | 1 per client channel; serialize requests. |
+| Subscriptions and consumers | 1 subscription per channel and 1 iterator consumer. |
+| Read page | 1–64 rows per request. |
+| Signed application request | At most 1 KiB before encryption. |
+| Application reply | At most 1 MiB before encryption, carried in bounded chunks. |
+| Subscription consumer queue | 32 complete updates or 1 MiB, whichever is reached first. |
+| Subscription authorization recheck | Every 500 ms. |
+| Retained journal | 4,096 records or 64 MiB per journal. Exhaustion stops dependent work rather than silently deleting history. |
 
-The record budget is not 128 trades: confirmation, multi-chunk responses and updates consume it. Reattest and resnapshot before using an expired/exhausted channel. Deployment authentication/grant durations and financial policies may impose tighter bounds.
+Eight sessions is **not** an eight-session allowance for each customer or a guaranteed limit for an entire multi-instance deployment. Shared service capacity can be reached by other accounts.
 
-Queue overflow is an error/closure, not permission to silently drop and continue. Delivery does not automatically retry economic requests. Public HTTP rejection/rate status alone cannot settle a private operation's outcome.
+The record budget is not a trade count: handshake confirmation, large replies and updates also consume records. Reconnect with fresh attestation before a channel expires or exhausts its record budget.
 
-Limits are implementation bounds, not native venue rate-limit allocations or promised production throughput.
+On subscription closure or overflow, establish a new channel and fetch a zero-cursor snapshot. Delivery failure does not automatically retry an order or payout. See [lifecycle](/api/lifecycle).
+
+These bounds are separate from venue rate limits and the risk policy's financial limits. Account authentication and agent-grant durations can impose tighter expiry.

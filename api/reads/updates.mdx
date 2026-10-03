@@ -1,6 +1,6 @@
 ---
 title: "Account updates"
-description: "Replacement account, basic position and receipt snapshots."
+description: "Account, position and operation snapshots."
 playground: "none"
 ---
 
@@ -8,13 +8,10 @@ playground: "none"
 
 **Read family:** `updates` · **Permission:** owner or current READ agent.
 
-Replacement account, basic position and receipt snapshots. Results are private to the bound account. The same query is
-available over HTTP and [WebSocket](/api/websocket), including subscriptions.
+Account, position and operation snapshots. Results belong to your account. The query supports HTTP and
+[WebSocket](/api/websocket), including subscriptions.
 
-<Note>
-  These are signed SDK fields and decoded results, not a plaintext JSON HTTP body.
-  The shared carrier accepts encrypted `application/octet-stream`.
-</Note>
+<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -93,7 +90,7 @@ mean unavailable, not zero. Empty `rows` is valid.
 </ResponseField>
 
 <ResponseField name="evaluatedAt" type="bigint (u64)" required>
-  Qualified Cinder evaluation time, in milliseconds.
+  Cinder evaluation time, in milliseconds.
 </ResponseField>
 
 <ResponseField name="rows" type="ReadRow[]" required>
@@ -121,7 +118,7 @@ mean unavailable, not zero. Empty `rows` is valid.
 </ResponseField>
 
 <ResponseField name="risk" type="Risk">
-  Optional qualified risk context.
+  Optional current margin and risk values.
   <Expandable title="risk fields">
 <ResponseField name="equity" type="bigint (i128)" required>
   Conservative risk equity.
@@ -136,7 +133,7 @@ mean unavailable, not zero. Empty `rows` is valid.
 </ResponseField>
 
 <ResponseField name="outcomeRequirement" type="bigint (i128)" required>
-  Requirement across qualified pending outcomes.
+  Requirement across the evaluated pending outcomes.
 </ResponseField>
 
 <ResponseField name="otherHeld" type="bigint (i128)" required>
@@ -186,11 +183,6 @@ Use as an HTTP snapshot or a WebSocket subscription. Each delivered page replace
 
 ## Paging and errors
 
-Read queries do not change financial state or consume order budgets.
-Permissions filter rows **before** paging. Changed permitted rows return encrypted
-`conflict`; restart at zero instead of combining revisions. End-of-pages covers
-retained rows, not complete external venue history.
-
-See [paging](/api/reads/paging), [errors](/api/errors), [limits](/api/limits)
-and [availability](/status). A disconnected subscription needs fresh attestation,
-current authority and a replacement snapshot.
+See [paging](/api/reads/paging) for cursors, revisions and missing values, and
+[errors](/api/errors) for response codes. Reconnect and fetch a new snapshot after
+a subscription closes.

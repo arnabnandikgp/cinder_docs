@@ -1,29 +1,35 @@
 ---
 title: "Private reads and paging"
-description: "Bounded projections from the same witnessed journal."
+description: "Read account snapshots and traverse retained history."
 ---
 
-All ten read families use signed `{ kind: 'read', query: { family, limit, cursor? } }` under owner or current READ-agent authority. Reads commit no financial change and spend no accepted-order budget.
+All ten read families use signed `{ kind: 'read', query: { family, limit, cursor? } }` requests. Owners and current READ agents can read the bound account. Reads do not change balances or consume an agent's accepted-order budget.
 
 | Field | Meaning |
 | --- | --- |
-| family | account / positions / operations / openOrders / fills / funding / movements / grants / markets / updates |
-| limit | Integer 1–64 rows |
-| cursor | Optional 40 bytes; omitted/all-zero starts a snapshot |
-| reply.revision | Commitment to all permitted rows and query identity, not a global journal sequence |
-| reply.next | Next cursor; all-zero means no more **retained** rows |
-| reply.evaluatedAt | Qualified Cinder evaluation time in milliseconds |
-| reply.rows | Typed family rows; empty page valid |
+| `family` | `account`, `positions`, `operations`, `openOrders`, `fills`, `funding`, `movements`, `grants`, `markets` or `updates`. |
+| `limit` | Integer from 1 to 64 rows. |
+| `cursor` | Optional 40-byte cursor. Omitted or all-zero starts a snapshot. |
+| `revision` | A commitment to the permitted rows and query, not a global activity counter. |
+| `next` | The next cursor. All-zero means no more retained rows. |
+| `evaluatedAt` | Cinder's evaluation timestamp in milliseconds. |
+| `rows` | Typed rows for the selected family. An empty page is valid. |
 
-Nonzero cursor is revision[32] plus permitted-row offset u64 big-endian. Permissions filter rows before paging. Changed rows cause encrypted conflict; discard the old traversal and restart at zero. Do not splice revisions. Reconnection signs under a new binding/current authority; obtain a fresh zero-cursor snapshot.
+A nonzero cursor contains the 32-byte revision followed by a u64 big-endian row offset. Access restrictions apply before rows are paged.
 
-Revision excludes unrelated users' commits and global journal sequencing. Retention is bounded; journal exhaustion contains rather than silently pruning. End-of-pages is not proof of complete external venue history.
+If permitted rows change, the service returns `conflict`. Discard that traversal and start at zero; pages from different revisions should not be combined. Reconnection also requires a new snapshot.
 
-Missing/unqualified fields are absent, not zero. committedAt/observedAt are qualified Cinder clocks, not invented exchange execution or block timestamps.
+READ exposes account information across markets, except that an agent sees only its own grant in the grant directory. See [agents](/guides/agents).
 
-## Checked SDK excerpt
+## Missing values and history
 
-`family` is a documented ReadFamily; ctx/client have the same configured meaning as on command pages.
+An absent optional risk or valuation field means no valid value was available. It is not zero.
+
+`committedAt` and `observedAt` identify Cinder's record or observation time, not an exchange's execution timestamp or a Solana block time. End-of-pages covers retained Cinder records, not necessarily every external venue event.
+
+## SDK example
+
+The `client` and `ctx` values follow [SDK integration](/quickstart).
 
 ```ts
 export async function read(client: PrivateClient, ctx: Context, family: ReadFamily,
@@ -32,3 +38,5 @@ export async function read(client: PrivateClient, ctx: Context, family: ReadFami
     command: { kind: 'read', query: { family, limit: 32, cursor } } });
 }
 ```
+
+[WebSocket](/api/websocket) supports the same families as replacement-page subscriptions. It does not deliver every intervening event as a delta stream.

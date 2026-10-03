@@ -1,6 +1,6 @@
 ---
 title: "Configured markets"
-description: "Governed market units, exact quote conversion and capability mask."
+description: "Market units, order modes and leverage caps."
 playground: "none"
 ---
 
@@ -8,13 +8,10 @@ playground: "none"
 
 **Read family:** `markets` · **Permission:** owner or current READ agent.
 
-Governed market units, exact quote conversion and capability mask. Results are private to the bound account. The same query is
-available over HTTP and [WebSocket](/api/websocket), including subscriptions.
+Market units, order modes and leverage caps. Results belong to your account. The query supports HTTP and
+[WebSocket](/api/websocket), including subscriptions.
 
-<Note>
-  These are signed SDK fields and decoded results, not a plaintext JSON HTTP body.
-  The shared carrier accepts encrypted `application/octet-stream`.
-</Note>
+<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -96,7 +93,7 @@ mean unavailable, not zero. Empty `rows` is valid.
 </ResponseField>
 
 <ResponseField name="evaluatedAt" type="bigint (u64)" required>
-  Qualified Cinder evaluation time, in milliseconds.
+  Cinder evaluation time, in milliseconds.
 </ResponseField>
 
 <ResponseField name="rows" type="ReadRow[]" required>
@@ -142,15 +139,10 @@ mean unavailable, not zero. Empty `rows` is valid.
 
 ## Behavior
 
-Conversion is lots × ticks × numerator / denominator in quote atoms, subject to governed exactness rules. This is kernel configuration, not public listings, ticker labels, book depth or chart data. Native/display mappings require approved configuration; a mode bit alone does not qualify live native execution.
+Conversion is lots × ticks × numerator / denominator in quote atoms, subject to governed exactness rules. These are configured trading units, not ticker prices, orderbook depth or chart data. A supported mode does not remove the account and market restrictions on individual orders.
 
 ## Paging and errors
 
-Read queries do not change financial state or consume order budgets.
-Permissions filter rows **before** paging. Changed permitted rows return encrypted
-`conflict`; restart at zero instead of combining revisions. End-of-pages covers
-retained rows, not complete external venue history.
-
-See [paging](/api/reads/paging), [errors](/api/errors), [limits](/api/limits)
-and [availability](/status). A disconnected subscription needs fresh attestation,
-current authority and a replacement snapshot.
+See [paging](/api/reads/paging) for cursors, revisions and missing values, and
+[errors](/api/errors) for response codes. Reconnect and fetch a new snapshot after
+a subscription closes.

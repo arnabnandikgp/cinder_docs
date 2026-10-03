@@ -1,12 +1,44 @@
 ---
 title: "Your account"
-description: "Individual entitlements over pooled external execution."
+description: "Understand your balance, equity, reserved funds and withdrawals."
 ---
 
-Your Cinder account records cash, positions, remaining entry basis, recognized funding and reservations separately. The external venue account carries pooled execution. Opposing customer positions can leave small net venue exposure without eliminating gross customer exposure or positive claims.
+Cinder records your balance, positions, funding, fees and trading results separately from other customers. Orders execute through shared venue accounts, but your account is not a share of the combined pool.
 
-This is not internal trade matching, an LP share or a separate native account per user. Ordinary trading losses belong to the relevant customer; pooling does not silently authorize sharing another customer's losses.
+## Four different amounts
 
-Owners, private account IDs and payout recipients are governed configuration. There is no signup endpoint. Wallet ownership authenticates access; it does not expose pooled account keys.
+| Amount | Meaning |
+| --- | --- |
+| Balance | Settled cash after deposits, realized trading results, settled funding, fees and payments. The API calls this `cash`. |
+| Equity | Balance plus recognized unsettled funding and unrealized position PnL at the applicable marks. |
+| Reserved funds | Amounts committed to pending orders, withdrawals or other operations. They cannot be spent a second time. |
+| Withdrawable funds | The amount that can pass current margin, pending-operation, pool-risk and available-liquidity checks. It can be lower than equity or free collateral. |
 
-[Risk](/security/risk) explains why pooled execution is not economically identical to independent native accounts in every stress scenario.
+Margin is the collateral required to support a position; it is not the position's full notional value. The API's `held` field reports explicit reservations, not the entire margin requirement.
+
+## Worked example
+
+Suppose you deposit $1,000, open a position and pay a $2 trading fee. The position has $40 of unrealized profit and $3 of recognized funding owed.
+
+| Item | Amount |
+| --- | ---: |
+| Settled balance | $998 |
+| Unrealized PnL | +$40 |
+| Unsettled funding | −$3 |
+| Accounting equity | $1,035 |
+| Margin requirement | $200 |
+| Separate reserved commitment | $100 |
+| Illustrative free collateral | $735 |
+| Immediately withdrawable after all checks | $600 |
+
+Here, only $600 can be paid immediately because the remaining available value is not all accessible for payment. Closing or settling a position, completing a pending operation, or returning collateral from a venue can change that amount.
+
+This example assumes the stated valuation and non-overlapping requirements. Actual risk checks may value collateral or unrealized gains more conservatively. Dollar amounts are illustrative; the API uses exact quote-asset atoms.
+
+## Account access and pooled execution
+
+Account setup supplies your private account ID, owner wallet and configured payout recipient. Connecting the wallet authenticates that account; it does not give you access to Cinder's venue keys.
+
+Opposing customer positions can reduce Cinder's net venue exposure without eliminating each customer's position or obligations. Pooled execution therefore differs from a separate venue account in some stress scenarios. See [risk and protection](/security/risk).
+
+Use [account reads](/api/reads/account) for balances and risk values, and [positions](/api/reads/positions) for position-level information.

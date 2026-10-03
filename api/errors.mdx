@@ -1,18 +1,20 @@
 ---
 title: "Errors"
-description: "Protected application failures are not transport outcome guarantees."
+description: "Handle application errors and uncertain delivery."
 ---
 
-| code | Treatment |
+| `code` | Meaning and next step |
 | --- | --- |
-| invalid | Malformed/unsupported command, units, IDs, bounds or deadline; inspect input |
-| unauthorized | Owner/agent, scope, epoch, signature, session or expiry failed |
-| not-found | Authorized lookup did not find the target in this account |
-| conflict | Same ID with changed intent, or stale read revision; reconcile/resnapshot |
-| unavailable | Required state, freshness, risk or evidence unavailable; contain and reconcile |
+| `invalid` | Unsupported or malformed fields, units, IDs or deadlines. Check the request. |
+| `unauthorized` | Signature, owner/agent permissions, market scope, epoch, session or expiry does not authorize the request. Check current account authority. |
+| `not-found` | An authorized lookup did not find the target in the bound account. For uncertain execution, follow [operation reconciliation](/api/methods/operation). |
+| `conflict` | The ID was reused with different intent, or the read cursor belongs to a changed snapshot. Reconcile the operation or restart paging. |
+| `unavailable` | Required state, freshness, risk information or external evidence is unavailable. Wait for reconciliation before dependent execution. |
 
-Typed errors are returned inside the encrypted response as `{ kind: 'error', code }`. No private details belong in public HTTP errors or logs.
+Application errors arrive inside the encrypted reply as `{ kind: 'error', code }`. They are not method-specific public HTTP error responses.
 
-The SDK throws a redacted delivery/verification error when it cannot establish a valid response. **A throw is not rejection.** Some actions may already be durable or externally exposed. Reconnect and query original operations before economic retry.
+The SDK throws a redacted delivery or verification error when it cannot establish a valid reply. This does not prove that the requested action was rejected: it may already be recorded or externally exposed.
 
-For paging conflict restart from zero. For stream rejection/closure restart with fresh attestation and current epoch, then resnapshot. Never continue consuming a gapped stream as authoritative.
+Keep the original ID, reconnect and [look up the operation](/api/methods/operation). If the outcome remains uncertain, retain it for operator reconciliation rather than submit a new trade.
+
+For a paging conflict, start again without a cursor. For a closed subscription, reconnect with fresh attestation and current authority, then obtain a new snapshot.

@@ -1,12 +1,36 @@
 ---
 title: "Recovery"
-description: "Operator-assisted final claims, not a heartbeat-only exit."
+description: "Claim final funds when the ordinary trading service is unavailable."
 ---
 
-Ordinary withdrawals use the authenticated payout workflow. Heartbeat failure cannot activate claims or make stale balances payable.
+Ordinary withdrawals use the authenticated [payout](/api/methods/payout) workflow. Recovery is a separate, operator-assisted settlement process; service downtime alone does not make an old balance payable.
 
-The operator must fence writers and outstanding venue capabilities, reconcile uncertain actions, settle exposure, return accessible assets, finalize remaining claims and segregate vault backing. Authorized activation then enables recovery claims.
+## Before claims open
 
-The intended encrypted package contains the final claim, privacy salt, Merkle path, domain/epoch and paid-counter basis. It must remain obtainable outside the trading API. Users verify it and submit to the activated program; previous payouts cannot be paid again.
+The recovery operator stops competing writers and venue actions, reconciles uncertain operations, settles remaining exposure and returns accessible funds to the Solana custody vault.
 
-The program is implemented; joined wind-down and independent package delivery are not yet qualified. Do not assume a package service exists today. Recovery depends on operators, venue access and assets—not unconditional operator-free exit. Public claims reveal payment details, not full private history.
+Final claims are then derived from the settled account records. Authorized publication and activation make the funded recovery estate available for claims. A heartbeat timeout cannot skip these steps.
+
+## Your recovery package
+
+Your recipient-encrypted package contains your final claim, destination, previous-payment basis and the Merkle proof needed to verify inclusion in the published recovery root.
+
+1. Obtain the published, signed recovery manifest and your privately delivered package locator.
+2. Retrieve the encrypted package from a recovery store, independently of the ordinary trading API.
+3. Decrypt it locally with your dedicated recovery key.
+4. Verify the manifest, claim, active recovery state and vault backing.
+5. Build and sign the claim with your owner wallet, then submit it to Solana.
+
+The client verifies the configured payout destination; a package cannot redirect payment to an arbitrary recipient. Previous confirmed payouts are accounted for once, so they cannot be claimed again.
+
+## Keep your recovery material
+
+Retain your dedicated decryption key, package locator and a ciphertext backup. The decryption key is separate from the wallet signing key and is not recreated from a wallet signature. Losing it can prevent you from opening your package; automatic key replacement is not part of this recovery flow.
+
+A saved ciphertext copy can be verified and decrypted when package stores are unavailable. If no valid copy can be obtained, a claim cannot be constructed from the public root alone.
+
+## Limits
+
+Recovery depends on operator action, venue access, complete settlement records and sufficient returned assets. It is not an immediate or unconditional exit from open venue positions.
+
+The ordinary trading service is not needed to retrieve, decrypt and submit an activated final claim. The claim transaction and payment are public; your full private trading history is not.

@@ -1,19 +1,31 @@
 ---
 title: "API overview"
-description: "A semantic SDK over encrypted binary carriers."
+description: "Signed commands and private account data over encrypted HTTP and WebSocket."
 ---
 
-Customer methods are commands in one signed protocol, not independent REST JSON routes. Use `PrivateClient.request` or `subscribe` after verified connection. The SDK handles canonical binary encoding, Ed25519 signing, encryption and typed replies.
+Use `PrivateClient.request` for commands and reads, and `PrivateClient.subscribe` for WebSocket updates. The SDK handles encoding, Ed25519 signatures, encryption and typed replies.
+
+Customer methods share one signed protocol; they are not separate plaintext REST JSON endpoints.
 
 | Carrier | Purpose |
 | --- | --- |
-| POST /v1/attestation | Fresh public challenge and signed enclave binding |
-| POST /v1/session | Noise handshake, confirmation and session disposal |
-| POST /v1/exchange | Encrypted signed command and encrypted reply |
-| GET /v1/ws (upgrade) | Confirmed-session binary commands and subscriptions |
+| `POST /v1/attestation` | Verify a fresh enclave identity and channel-key binding. |
+| `POST /v1/session` | Establish, confirm or dispose of an encrypted session. |
+| `POST /v1/exchange` | Send an encrypted signed request and receive an encrypted reply. |
+| `GET /v1/ws` | Upgrade a confirmed session for binary commands and private subscriptions. |
 
-POST carriers use `application/octet-stream`; private account IDs, commands and signatures never belong in URLs/headers. Authorization/Cookie and compressed private ingress are refused. Browser access uses one exact configured origin and no cookies. HTTPS/WSS is required outside loopback tests.
+## Connection and authentication
 
-There is no bearer-token login, plain JSON exchange, automatic native signature forwarding or trusted server-side decrypting proxy. No public base URL is supplied. See [availability](/status).
+Start with [SDK integration](/quickstart). Use the HTTPS origin and account configuration supplied for your deployment, and an independently trusted enclave release policy.
 
-Eight original commands plus versioned `read` reach the same authorization, reservations and journal. HTTP and WebSocket are transport choices, not different financial engines. [WebSocket](/api/websocket) adds private replacement-page updates, not public chart/orderbook data.
+POST carriers use `application/octet-stream`. Private account IDs, commands and signatures are encrypted in the body, not placed in URLs or headers. The service does not use bearer-token login or cookies. Browser requests use the configured allowed origin; HTTPS/WSS is required for remote connections.
+
+Your Cinder signature authenticates a private account request. It is not forwarded as a native venue signature; Cinder handles venue execution through its own authority.
+
+## Methods and data
+
+The interface includes order, cancel, payout, grant, revoke, leverage, view and operation commands, plus ten [private read families](/api/reads/paging).
+
+HTTP and WebSocket use the same account rules. WebSocket adds [private snapshot updates](/api/websocket), not public ticks, candles or orderbook feeds.
+
+Shared request fields are described in [authentication](/api/authentication). Shared receipt fields and uncertain outcomes are described in [lifecycle](/api/lifecycle). Method pages describe their command-specific behavior and examples.

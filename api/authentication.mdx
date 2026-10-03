@@ -1,27 +1,39 @@
 ---
 title: "Authentication and signing"
-description: "Owner or scoped agent signatures inside a freshly attested session."
+description: "Wallet or agent signatures bound to a verified encrypted session."
 ---
 
-Every request binds:
+The account owner signs with their Solana wallet. An authorized [agent](/guides/agents) signs with its own Ed25519 key. Neither signer receives Cinder's venue credentials.
 
-| Field | Type / role |
+## Request envelope
+
+| Field | Type and meaning |
 | --- | --- |
-| domain.network, domain.deployment | Nonzero 32-byte approved IDs |
-| account | Nonzero 32-byte private account ID |
-| id | Nonzero 32-byte request ID, stable for one economic intent |
-| policy | Governed nonzero u32 policy version |
-| epoch | Current positive u64 account authority epoch |
-| signer | Ed25519 public key: configured owner or active scoped Cinder agent |
-| session | Verified channel binding; supplied by SDK |
-| expiresAt | u64 milliseconds; within channel and configured authentication lifetime |
-| command | Exact typed command |
-| signature | 64-byte Ed25519 signature over SDK canonical signing message |
+| `domain.network`, `domain.deployment` | Nonzero 32-byte network and deployment IDs from your configuration. |
+| `account` | Your nonzero 32-byte private account ID. |
+| `id` | Nonzero 32-byte request ID. Preserve it for the same economic intent. |
+| `policy` | The configured nonzero u32 policy version. |
+| `epoch` | The account's current positive u64 authority epoch. |
+| `signer` | The owner or currently authorized agent's Ed25519 public key. |
+| `session` | Verified channel binding, supplied by the SDK. |
+| `expiresAt` | Authentication expiry in milliseconds, within the channel and account-policy limits. |
+| `command` | The exact typed command. |
+| `signature` | A 64-byte Ed25519 signature over the SDK's canonical signing message. |
 
-The SDK signs the `CINDER-API\0\x00\x01` fixed-width big-endian encoding. Do not sign displayed JSON, human-readable messages, a native venue payload or an arbitrary digest instead.
+The SDK provides the domain, account, policy and session fields from its configuration. Each `request` supplies `id`, `epoch`, `expiresAt` and `command`.
 
-Fresh attestation verifies AWS trust, approved PCR0/1/2 and manifest, network/deployment, challenge, boot, channel key, handle and expiry before private authentication. Policy and SDK/WASM code must come from independently trusted distribution.
+## Attestation and signing
 
-Current permissions, epoch and journal freshness are checked before lookup or idempotent replay. Economic identity includes domain/account/id/policy and exact command; changing the financial deadline changes the intent. A fresh session/authentication expiry may re-sign the same intent, but does not authorize a new economic attempt.
+Before a private request, the SDK verifies the AWS attestation chain, approved enclave measurements and release manifest, deployment identity, fresh challenge, channel key and session expiry.
 
-No self-service signup or bearer tokens. Agent authority is limited by [grant](/api/methods/grant); native pooled credentials are never customer credentials.
+Code and expected release identity must come from trusted distribution, independently of the relay being verified.
+
+Requests use the `CINDER-API\0\x00\x01` fixed-width big-endian signing format. Signing a displayed JSON object or a native venue payload is not equivalent.
+
+## Authority and retries
+
+Current signatures, grant permissions, authority epoch and journal freshness are checked before lookup or replay. Revocation changes the epoch and disables previous grants.
+
+The economic identity binds the domain, account, request ID, policy and exact command. In particular, changing `goodUntil` changes the intent. A fresh session may re-sign the same intent with a new authentication expiry; it does not create permission for another external attempt.
+
+READ agents can view the bound account across markets. TRADE and CANCEL retain their market and order restrictions. See [agent permissions](/guides/agents) and [reconciliation](/api/lifecycle).

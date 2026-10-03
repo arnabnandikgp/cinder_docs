@@ -1,14 +1,37 @@
 ---
 title: "Deposits and withdrawals"
-description: "Separate customer credit, collateral routing and final payment."
+description: "Fund your account, understand available collateral and track payment."
 ---
 
-The route is Solana wallet → Cinder program vault → supported broker funding route → venue, and back. Intermediate venue funding authority remains a custody boundary: the Solana program does not control ordinary venue HTTP actions.
+## Deposit
 
-A qualified final deposit credits your entitlement once. Moving that collateral between Cinder locations does not credit it again. Cinder allocates working collateral, not full perp notional, and can retain useful venue collateral between trades.
+Your deposit moves from your Solana wallet to Cinder's custody vault. Once the deposit is confirmed and credited, it appears in your account balance.
 
-The owner-only [payout](/api/methods/payout) targets the configured token account. It reserves net amount plus extra fee cap. Genuine free collateral may be withdrawn with open positions, subject to pending outcomes, margin, capital and location liquidity—not just displayed cash.
+Cinder routes working collateral to the supported execution venue as needed. Moving funds between the vault and venue does not create another deposit or change the owner of your balance. Collateral can remain at a venue between trades; each order does not require a fresh round trip.
 
-Acceptance or a source debit is not payment. Qualified beneficiary evidence discharges the claim. Partial payment requires consent; solvent queuing is not insolvency priority.
+Use the mint, network and deposit route specified by your account configuration. Confirmation requirements and transfer costs are route-specific.
 
-Deposits and payments are public on Solana. No live deposit address is announced here.
+## Request a withdrawal
+
+The account owner submits a [payout request](/api/methods/payout) specifying the net amount, maximum additional fee and whether partial payment is allowed. Payment goes to the account's configured token recipient; trading agents cannot withdraw or replace it.
+
+Cinder reserves the requested amount plus its fee cap. Admission checks open-position margin, outstanding orders, other commitments and available payment liquidity.
+
+You can withdraw genuine free collateral while positions remain open. Collateral needed to support those positions must first be released by reducing or closing them. A higher displayed equity does not by itself make more cash payable.
+
+## Track progress
+
+Keep the payout request ID and use [operation lookup](/api/methods/operation) or [account operations](/api/reads/operations) to follow it.
+
+| Status | What it means for your withdrawal |
+| --- | --- |
+| `accepted` | The request and its reservation are recorded; payment has not completed. |
+| `dispatched` or `unknown` | Payment may be in progress. Its outcome must be established before another attempt. |
+| `partial` | A confirmed part of the net amount has reached your recipient. |
+| `complete` | The operation has finished. Check `paid` against the requested amount, especially when partial payment was allowed. |
+
+A withdrawal is complete only after payment to your configured recipient has been confirmed. Acceptance of the request does not mean payment has completed. Moving money out of a source account is also not sufficient confirmation.
+
+Requests may wait for funds to become available from a venue. A payout queue does not guarantee a fixed completion time or determine loss priority if assets are impaired.
+
+Deposits, withdrawals and their transfer details are public on Solana. [Recovery](/security/recovery) is a separate process for an interrupted service, not an alternative ordinary withdrawal endpoint.

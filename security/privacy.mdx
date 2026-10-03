@@ -1,12 +1,26 @@
 ---
-title: "Privacy and transport"
-description: "Private application data terminates inside the confidential service."
+title: "Privacy"
+description: "Who can see your account data—and what remains visible."
 ---
 
-The SDK verifies fresh Nitro attestation against an independently approved release, then establishes authenticated encryption to the enclave. Signed commands and private replies are encrypted before crossing the parent relay; the parent is not a plaintext trading backend.
+Your SDK verifies the enclave's identity and encrypts private requests before they cross Cinder's relay infrastructure. Decryption and account processing happen inside the confidential enclave.
 
-Balances, positions, orders and history are private. Deposits and payouts are public. Venues observe pooled account activity; privacy does not hide all metadata or transfers.
+## Privacy by observer
 
-A hostile website can steal data before encryption. Obtain the SDK/WASM core and release policy through trusted distribution, not the attestation response.
+| Observer | Visible information |
+| --- | --- |
+| Public blockchain | Deposits, withdrawals, recovery claims and their transfer details; public recovery commitments. Not your complete private balance, positions or order history. |
+| Execution venue | Cinder's shared account, aggregate orders, positions and funding activity. Not Cinder's private user-level allocation records. |
+| Parent instance and relay infrastructure | Encrypted messages, routing handles and traffic metadata such as timing and sizes. Not the plaintext of signed private commands or replies. |
+| Account owner | Their own balances, positions, orders and history. |
+| Authorized agent | Information and actions allowed by its grant. READ includes account information across markets. |
 
-The selected Noise implementation has an unresolved opaque-secret erasure limitation. Browser teardown is not memory-erasure proof. Changed-image hardware qualification, production governance and independent review remain release gates. See [availability](/status) and [verification](/security/verification).
+Privacy does not mean anonymous transfers or invisible network activity. Traffic patterns may reveal information even when message contents are encrypted.
+
+## Client and device security
+
+Use SDK code and the expected enclave release identity from a trusted distribution channel. A compromised website, wallet integration or device can read your data before encryption or after decryption.
+
+Closing a session releases its encryption objects, but does not guarantee that every copy of a secret has immediately disappeared from browser or device memory. Local device compromise is therefore outside the protection offered by encrypted transport.
+
+Attestation identifies the measured code and channel key; it is not a guarantee that the code has no vulnerabilities. See [verification](/security/verification) for the scope of each security check.

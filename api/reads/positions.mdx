@@ -1,6 +1,6 @@
 ---
 title: "Positions"
-description: "Private positions, signed basis and optional mark and leverage."
+description: "Your position size, entry value and leverage."
 playground: "none"
 ---
 
@@ -8,13 +8,10 @@ playground: "none"
 
 **Read family:** `positions` · **Permission:** owner or current READ agent.
 
-Private positions, signed basis and optional mark and leverage. Results are private to the bound account. The same query is
-available over HTTP and [WebSocket](/api/websocket), including subscriptions.
+Your position size, entry value and leverage. Results belong to your account. The query supports HTTP and
+[WebSocket](/api/websocket), including subscriptions.
 
-<Note>
-  These are signed SDK fields and decoded results, not a plaintext JSON HTTP body.
-  The shared carrier accepts encrypted `application/octet-stream`.
-</Note>
+<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -92,7 +89,7 @@ mean unavailable, not zero. Empty `rows` is valid.
 </ResponseField>
 
 <ResponseField name="evaluatedAt" type="bigint (u64)" required>
-  Qualified Cinder evaluation time, in milliseconds.
+  Cinder evaluation time, in milliseconds.
 </ResponseField>
 
 <ResponseField name="rows" type="ReadRow[]" required>
@@ -119,10 +116,10 @@ mean unavailable, not zero. Empty `rows` is valid.
 </ResponseField>
 
 <ResponseField name="valuation" type="Valuation">
-  Optional qualified mark and unrealized PnL.
+  Optional mark and unrealized PnL, available when valid price data exists.
   <Expandable title="valuation fields">
 <ResponseField name="mark" type="bigint (u64)" required>
-  Qualified positive mark, in ticks.
+  Valid positive mark, in ticks.
 </ResponseField>
 
 <ResponseField name="pnl" type="bigint (i128)" required>
@@ -132,7 +129,7 @@ mean unavailable, not zero. Empty `rows` is valid.
 </ResponseField>
 
 <ResponseField name="leverage" type="Leverage">
-  Optional qualified policy cap and selected leverage.
+  Optional market cap and selected leverage.
   <Expandable title="leverage fields">
 <ResponseField name="cap" type="bigint (u64)" required>
   Maximum multiplier scaled by 10,000.
@@ -152,11 +149,6 @@ Includes flat configured markets. Missing valuation or leverage is not zero. Rem
 
 ## Paging and errors
 
-Read queries do not change financial state or consume order budgets.
-Permissions filter rows **before** paging. Changed permitted rows return encrypted
-`conflict`; restart at zero instead of combining revisions. End-of-pages covers
-retained rows, not complete external venue history.
-
-See [paging](/api/reads/paging), [errors](/api/errors), [limits](/api/limits)
-and [availability](/status). A disconnected subscription needs fresh attestation,
-current authority and a replacement snapshot.
+See [paging](/api/reads/paging) for cursors, revisions and missing values, and
+[errors](/api/errors) for response codes. Reconnect and fetch a new snapshot after
+a subscription closes.

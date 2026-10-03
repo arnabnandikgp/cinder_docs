@@ -1,15 +1,19 @@
 ---
-title: "What verification establishes"
-description: "Code, claim inclusion, complete backing and executable exit are separate assurances."
+title: "Verification"
+description: "Understand what attestation, account records and recovery proofs establish."
 ---
 
-| Check | Establishes | Does not establish |
+Different checks answer different questions. Verifying the enclave, verifying your claim and verifying the resources backing it are separate steps.
+
+| Check | What it establishes | What it does not establish |
 | --- | --- | --- |
-| Attestation and channel binding | Connection to approved measured code/key under verifier assumptions | Correct economics, full solvency, honest client distribution or continuous availability |
-| Claim Merkle inclusion | Your leaf belongs to a specified root | Complete liabilities, asset access or sufficient reserves |
-| Reconciliation/backing evidence | Explicitly covered checks at a qualified cut | Immunity to shocks or venue inaccessibility |
-| Activated funded recovery | Claims execute under that estate/program's constraints | Operator-free exit from arbitrary live exposure |
+| Enclave attestation and channel binding | Your connection is bound to the expected measured code and encryption key. | Error-free code, correct economics or continuous service availability. |
+| Account records and reconciliation | Recorded balances and positions match the external evidence included in the reconciliation. | That a venue cannot fail or that assets are always accessible. |
+| Recovery claim inclusion | Your final claim belongs to the published recovery root. | That the root includes every liability or that the vault contains enough assets. |
+| Active funded recovery state | The program has an activated estate and backing that can be checked before a claim. | Automatic recovery from arbitrary open exposure or operator-free wind-down. |
 
-There is no production complete-liabilities/reserves proof published by these docs. ZK cannot replace asset authority, settled exposure or complete claims.
+The recovery manifest binds a final statement to the relevant deployment, pool, asset, settlement cutoff and policy. Your client checks that context before constructing a payment claim.
 
-The [evidence register](https://github.com/arnabnandikgp/cinder/blob/product/tee-v1/docs/implementation/EVIDENCE.md) separates documented interfaces, offline tests, hardware observations and unresolved gates.
+A Merkle proof is an inclusion proof, not a complete solvency proof. Complete backing also requires correctly recorded liabilities, appropriate asset valuation and access to the assets. Neither encryption nor a proof system can supply missing funds or venue withdrawal authority.
+
+Cinder's private account data is not published as a public portfolio report. A public recovery claim reveals the information needed to verify and pay that claim, not the account's complete trading history.

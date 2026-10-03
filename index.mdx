@@ -1,13 +1,19 @@
 ---
 title: "Prime brokerage for Solana perpetuals"
-description: "Trade through one private account, with execution on existing perp venues."
+description: "Private accounts. Shared execution. Existing perp liquidity."
 ---
 
-Cinder separates your trading account from the public venue account used for execution. Your balances, positions, orders and trading history stay inside the confidential service. External venues receive Cinder's pooled execution flow.
+Cinder gives you a private trading account for accessing Solana perp venues.
 
-You retain an individual recorded entitlement—not shares in a trading pool. Actual fills, funding and costs determine your account economics.
+Cinder tracks your balance, positions and trading results separately, while executing through shared accounts on supported venues. Your account reflects your own trading results; it is not a share in an investment pool.
 
-Start with [availability](/status), then the [SDK quickstart](/quickstart). Pacifica is the first integration; this reference covers the implemented, locally tested interface. It is not an invitation to deposit real funds.
+Your orders and account data are processed inside a confidential enclave. Venues see Cinder's pooled execution, rather than a separate venue account for each customer. Deposits and withdrawals remain visible on Solana.
 
-- [Account model](/guides/accounts): pooled execution and individual entitlements.
-- [API reference](/api/overview): signed commands, private reads and WebSocket updates.
+## Start here
+
+- [Your account](/guides/accounts): balances, equity and available funds.
+- [Trading](/guides/trading): orders, fills and leverage.
+- [SDK integration](/quickstart): connect and read an account.
+- [API reference](/api/overview): commands, private reads and WebSocket updates.
+
+See [product scope](/status) for supported interfaces and [security](/security/privacy) for the privacy model.

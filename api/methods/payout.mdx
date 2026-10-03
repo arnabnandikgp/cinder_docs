@@ -1,6 +1,6 @@
 ---
 title: "Payout"
-description: "Request net payment to the governed owner token account."
+description: "Request a withdrawal to your configured recipient."
 playground: "none"
 ---
 
@@ -8,13 +8,9 @@ playground: "none"
 
 **Permission:** Owner only.
 
-Request net payment to the governed owner token account. The same command is available over [WebSocket](/api/websocket).
+Request a withdrawal to your configured recipient. The same command is available over [WebSocket](/api/websocket).
 
-<Note>
-  Fields below describe the SDK request **before encryption** and the decoded reply.
-  The HTTP body is encrypted binary `application/octet-stream`, not JSON.
-  Use a verified [SDK client](/quickstart); the interactive playground is disabled.
-</Note>
+<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -85,8 +81,8 @@ session binding, and signs the canonical [envelope](/api/authentication).
 
 ## Response fields
 
-The example uses illustrative quote atoms and configured IDs, not live venue data.
-A receipt records operation progress; acceptance is not execution or payment.
+The result uses the shared [receipt fields](/api/lifecycle#shared-receipt-fields).
+The fields below are most relevant to this method.
 
 <ResponseField name="kind" type="&quot;receipt&quot;" required>
   Response discriminator.
@@ -96,24 +92,12 @@ A receipt records operation progress; acceptance is not execution or payment.
   Durable operation ID. For an operation lookup, this is the target ID, not the query ID.
 </ResponseField>
 
-<ResponseField name="digest" type="Uint8Array (32 bytes)" required>
-  Commitment to the immutable economic intent.
-</ResponseField>
-
-<ResponseField name="policy" type="number (u32)" required>
-  Governed policy version.
-</ResponseField>
-
 <ResponseField name="outcome" type="Outcome" required>
   `rejected`, `accepted`, `dispatched`, `acknowledged`, `partial`, `complete` or `unknown`. See [lifecycle](/api/lifecycle).
 </ResponseField>
 
-<ResponseField name="filled" type="bigint (i64)" required>
-  Actual attributed signed lots, not requested quantity.
-</ResponseField>
-
 <ResponseField name="paid" type="bigint (i128)" required>
-  Qualified net payment to the beneficiary, in quote atoms.
+  Confirmed net payment to the configured recipient, in quote atoms.
 </ResponseField>
 
 <ResponseField name="railFees" type="bigint (i128)" required>
@@ -134,16 +118,14 @@ A receipt records operation progress; acceptance is not execution or payment.
 
 ## Behavior
 
-Receipt: paid is qualified beneficiary payment; railFees actual charged customer rail fees; feeCap the declared extra fee cap. Admission reserves net + maximumFee. Acceptance/source debit is not payment. Genuine free collateral may be withdrawn with open positions subject to risk and accessible vault liquidity. No recipient override, arbitrary asset transfer or agent payout; this is not recovery activation.
+The request reserves `net + maximumFee`. `paid` records confirmed net payment to your configured recipient; `railFees` records charged withdrawal-transfer fees; `feeCap` is the additional fee limit you authorized.
+
+A withdrawal is complete only after payment to your configured recipient has been confirmed. Acceptance or money leaving a source account is not payment completion. Check `paid` against the requested net amount, especially when partial payment was allowed.
+
+Free collateral can be withdrawn while positions remain open, subject to margin, pending operations and accessible vault funds. Agents cannot request payouts, and the command cannot override your recipient. See [funds](/guides/funds) for the full flow.
 
 ## Errors and reconciliation
 
-[Typed errors](/api/errors) are returned inside the encrypted reply, not as
-field-specific HTTP status codes. Invalid fields, expired or out-of-scope authority,
-conflicting intent IDs and unavailable required evidence fail closed.
-
-
-
-A delivery error or timeout is **not a rejection**. Reconnect with fresh attestation
-and reconcile the original operation ID before any economic retry.
-See [lifecycle](/api/lifecycle), [limits](/api/limits) and [availability](/status).
+See [errors](/api/errors) for response codes and [lifecycle](/api/lifecycle)
+for delivery failures, receipts and retries. Keep the original operation ID when
+reconciling an uncertain result.

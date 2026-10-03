@@ -1,30 +1,44 @@
 ---
 title: "WebSocket commands and updates"
-description: "The same commands, plus bounded private replacement pages."
+description: "Send signed commands and receive private account snapshots."
 ---
 
-Use `connectWebChannel({ baseUrl, policy, core, transport: 'websocket' })`. The SDK first verifies attestation and completes the HTTP Noise handshake/confirmation, then upgrades `/v1/ws` at the same origin. Only the opaque confirmed handle travels before encrypted binary frames.
+Connect with `connectWebChannel({ baseUrl, policy, core, transport: 'websocket' })`. The SDK verifies attestation, establishes the encrypted session over HTTP, then upgrades `/v1/ws` at the same origin.
 
-All `client.request` commands retain the same signatures, authorization, stable IDs and journal. Text messages, subprotocols, compression, private URL fields and bearer/cookie headers are unsupported.
+Use `client.request` for the same commands and reads available over HTTP. WebSocket does not change signatures, permissions or operation IDs.
 
 ## Subscribe
 
-Owner/current READ agent can subscribe to any documented read family with zero cursor. One subscription per channel; one iterator consumer. Imports/configuration follow the SDK quickstart.
+An owner or current READ agent can subscribe to any [read family](/api/reads/paging), starting without a cursor. A channel supports one subscription and one iterator consumer.
+
+The `client` and application-defined `Context` follow [SDK integration](/quickstart).
 
 ```ts
 export async function subscribe(client: PrivateClient, ctx: Context) {
   const pages = await client.subscribe({ id: ctx.id, epoch: ctx.epoch,
     expiresAt: ctx.expiresAt, query: { family: 'updates', limit: 64 } });
   for await (const page of pages) {
-    // Replace this page. Do not treat it as an incremental fill feed.
-    // Fetch further rows using page.next; resnapshot on conflict or disconnect.
-    if (page.kind !== 'page') throw new Error('Resnapshot required');
+    if (page.kind !== 'page') throw new Error('New snapshot required');
+    // Replace the displayed page with page.rows.
+    // Use page.next to read further rows under the same revision.
   }
 }
 ```
 
-The first page arrives immediately. The service rechecks authorization, expiry and independent freshness every 500 ms, even when idle. Changed permitted revisions emit replacement pages; unrelated commits do not emit a global activity counter. Notifications coalesce—not every intervening fill or journal transition. Page retained histories to recover intervening changes.
+The first response supplies a snapshot. Changes to permitted rows trigger replacement pages; updates may coalesce. They are not a delta feed or a notification for every intervening fill.
 
-Returning the iterator closes the channel, even before its first next(). Missing/out-of-order delivery, revocation, expiry, witness loss or overflow closes/clears the stream. A thrown iterator or closure requires fresh attestation, current epoch and zero-cursor resnapshot; never resume cipher counters or replay trades automatically.
+To recover intervening changes, page the relevant order, fill, funding or operation history. Unrelated customers' activity does not supply a global activity counter.
 
-[Limits](/api/limits) are finite and deliberately short. These are private account streams, not public ticks/candles/orderbook feeds.
+## Disconnect and reconnect
+
+Permissions, session expiry and state freshness are rechecked every 500 ms, including during idle periods. Revocation, expiry, lost freshness, missing or out-of-order delivery and queue overflow close the stream.
+
+Returning the subscription iterator also closes the channel, even before its first read. On closure or an iterator error, establish a freshly attested session, use current account authority and start from a zero-cursor snapshot.
+
+Outstanding trades are reconciled through their original operation IDs; reconnect does not automatically resend them.
+
+## Transport boundaries
+
+Frames are binary and encrypted. Text messages, subprotocols, compression, private URL fields and bearer/cookie authentication are unsupported.
+
+These subscriptions carry private account data, not public candles, ticks or orderbook feeds. See [limits](/api/limits) for capacity and [lifecycle](/api/lifecycle) for uncertain commands.

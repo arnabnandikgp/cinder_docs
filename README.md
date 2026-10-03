@@ -1,40 +1,14 @@
-# Copy-ready Cinder docs
+# Cinder documentation
 
-This directory contains **37 MDX content pages**, with Mintlify-compatible
-frontmatter and native field/example components. Copy the pages and folder structure
-into your existing Mintlify documentation repository. Add their extensionless
-paths to that repository's navigation configuration. The user-supplied `docs.json`
-is kept alongside them for copying; no standalone application or new tooling is
-required. This entire directory is local and excluded from this repository's Git
-tracking. Do not stage it with implementation changes.
+Product guides and API reference for Cinder, written in Mintlify-compatible MDX.
 
-Suggested navigation:
+Navigation, branding and site settings are configured in [docs.json](docs.json).
+The content covers accounts, trading, funds, agent permissions, privacy, recovery
+and the HTTP/WebSocket SDK interface.
 
-- Start: `index`, `status`, `quickstart`.
-- Guides: `guides/accounts`, `guides/funds`, `guides/trading`, `guides/agents`.
-- Security: `security/privacy`, `security/risk`, `security/recovery`,
-  `security/verification`.
-- API: `api/overview`, `api/authentication`, `api/units`, `api/lifecycle`,
-  `api/errors`.
-- Commands: all eight pages under `api/methods/`.
-- Reads: `api/reads/paging` and all ten family pages under `api/reads/`.
-- Socket: `api/websocket`, `api/limits`.
+API pages use Mintlify request, response and field components. Examples show SDK
+objects and decoded results; private requests travel as encrypted binary rather
+than plaintext JSON. The interactive HTTP playground is disabled for that reason.
 
-Links use Mintlify root-relative, extensionless page routes. If you nest the
-content under a prefix in your docs repository, adjust those links accordingly.
-Command/read pages show `POST /v1/exchange` as ordinary text, not `api:`
-frontmatter that requires a public server URL. They retain
-`playground: "none"`: the request fields describe SDK objects, not a directly
-callable JSON body. `RequestExample` and `ResponseExample` show examples alongside
-the `ParamField`/`ResponseField` schemas; `Expandable` groups nested fields.
-Your existing Mintlify theme/navigation remain yours. No base URL is invented.
-This README is a copying note, not a public navigation page. Example methods use
-the configured client/context described in the quickstart; there is no live
-endpoint, self-service account API or published npm SDK implied.
-
-Content is based on merged P21A implementation `0530374` and the approved
-financial/privacy/recovery baseline. Commands, units, permissions, uncertainties
-and limits are mapped to the tracked TypeScript/Rust sources. Validation receipts
-live in the implementation tracker; they do not imply hosted publication, a live
-endpoint or customer-funds qualification. There is no conversion to MD, new
-recurring CI requirement or runtime change.
+Publish through this repository's Mintlify connection. Preserve the folder paths
+when moving content so root-relative page links continue to resolve.

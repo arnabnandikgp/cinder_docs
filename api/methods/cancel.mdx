@@ -1,6 +1,6 @@
 ---
 title: "Cancel"
-description: "Cancel without pretending away late fills."
+description: "Cancel an order and account for concurrent fills."
 playground: "none"
 ---
 
@@ -8,13 +8,9 @@ playground: "none"
 
 **Permission:** Owner, or CANCEL agent for its own order.
 
-Cancel without pretending away late fills. The same command is available over [WebSocket](/api/websocket).
+Cancel an order and account for concurrent fills. The same command is available over [WebSocket](/api/websocket).
 
-<Note>
-  Fields below describe the SDK request **before encryption** and the decoded reply.
-  The HTTP body is encrypted binary `application/octet-stream`, not JSON.
-  Use a verified [SDK client](/quickstart); the interactive playground is disabled.
-</Note>
+<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -52,7 +48,7 @@ The client supplies the configured domain, account, policy, signer and verified
 session binding, and signs the canonical [envelope](/api/authentication).
 
 <ParamField body="id" type="Uint8Array (32 bytes)" required>
-  Nonzero private request ID. Retain it for an exact retry; use a distinct ID for a different intent.
+  ID for this cancellation request, distinct from the original order ID. Retain it for an exact retry.
 </ParamField>
 
 <ParamField body="epoch" type="bigint (u64)" required>
@@ -68,11 +64,11 @@ session binding, and signs the canonical [envelope](/api/authentication).
 </ParamField>
 
 <ParamField body="command.target" type="Uint8Array (32 bytes)" required>
-  Original admitted private order.
+  Original Cinder order request ID. It is not a venue order ID or this cancellation request ID.
 </ParamField>
 
 <ParamField body="command.attempt" type="Uint8Array (32 bytes)" required>
-  Stable distinct cancel attempt; preserve on retry.
+  Stable cancellation-attempt ID for the target order. Preserve it on retry; it is a different identifier role from the API request ID.
 </ParamField>
 
 <ParamField body="command.goodUntil" type="bigint (u64)" required>
@@ -81,8 +77,8 @@ session binding, and signs the canonical [envelope](/api/authentication).
 
 ## Response fields
 
-The example uses illustrative quote atoms and configured IDs, not live venue data.
-A receipt records operation progress; acceptance is not execution or payment.
+The result uses the shared [receipt fields](/api/lifecycle#shared-receipt-fields).
+The fields below are most relevant to this method.
 
 <ResponseField name="kind" type="&quot;receipt&quot;" required>
   Response discriminator.
@@ -90,14 +86,6 @@ A receipt records operation progress; acceptance is not execution or payment.
 
 <ResponseField name="id" type="Uint8Array (32 bytes)" required>
   Durable operation ID. For an operation lookup, this is the target ID, not the query ID.
-</ResponseField>
-
-<ResponseField name="digest" type="Uint8Array (32 bytes)" required>
-  Commitment to the immutable economic intent.
-</ResponseField>
-
-<ResponseField name="policy" type="number (u32)" required>
-  Governed policy version.
 </ResponseField>
 
 <ResponseField name="outcome" type="Outcome" required>
@@ -108,38 +96,30 @@ A receipt records operation progress; acceptance is not execution or payment.
   Actual attributed signed lots, not requested quantity.
 </ResponseField>
 
-<ResponseField name="paid" type="bigint (i128)" required>
-  Qualified net payment to the beneficiary, in quote atoms.
-</ResponseField>
-
-<ResponseField name="railFees" type="bigint (i128)" required>
-  Actual customer-paid payout rail fees; not ordinary trading fees.
-</ResponseField>
-
-<ResponseField name="feeCap" type="bigint (i128)" required>
-  Declared fee cap: absolute requested lots × fee-per-lot for orders, or extra rail-fee cap for payouts. Not the amount charged.
-</ResponseField>
-
 <ResponseField name="possiblyExposed" type="boolean" required>
   Whether the operation may have escaped for external execution. False alone is not a final settlement guarantee.
 </ResponseField>
 
-<ResponseField name="allowPartial" type="boolean" required>
-  The recorded payout partial-dispatch consent. False for unrelated commands.
-</ResponseField>
-
 ## Behavior
 
-Receipt for the cancel request. Unexposed orders can release local reservations; exposed ones require cancellation/reconciliation. Cancel ACK is not terminal proof. Query original order and cancel operation as needed. No raw native cancel-all.
+### Cancellation IDs
+
+| Field | Identifies |
+| --- | --- |
+| `id` | This API cancellation request. It is distinct from the original order's request ID. |
+| `command.target` | The original Cinder order request ID, not a venue order ID. |
+| `command.attempt` | The cancellation execution attempt associated with the target. It is a separate identifier from the API request ID. |
+
+Keep all three values, and the exact deadline, unchanged when resubmitting the same cancellation. Changing them describes a different intent or attempt.
+
+### Cancellation and late fills
+
+An order that has not reached external execution can release its local reservation. An exposed order requires cancellation and execution-history reconciliation.
+
+A cancellation acknowledgement does not prove that no late fill can arrive. Query this cancellation's `id` for its progress and the original order's `target` for its final result. There is no raw venue cancel-all command.
 
 ## Errors and reconciliation
 
-[Typed errors](/api/errors) are returned inside the encrypted reply, not as
-field-specific HTTP status codes. Invalid fields, expired or out-of-scope authority,
-conflicting intent IDs and unavailable required evidence fail closed.
-
-
-
-A delivery error or timeout is **not a rejection**. Reconnect with fresh attestation
-and reconcile the original operation ID before any economic retry.
-See [lifecycle](/api/lifecycle), [limits](/api/limits) and [availability](/status).
+See [errors](/api/errors) for response codes and [lifecycle](/api/lifecycle)
+for delivery failures, receipts and retries. Keep the original operation ID when
+reconciling an uncertain result.

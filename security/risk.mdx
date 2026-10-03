@@ -1,12 +1,38 @@
 ---
 title: "Risk and protection"
-description: "Separate trading losses, pool risk and Cinder capital."
+description: "Margin, shared-account risk and policy-defined protection."
 ---
 
-Customer margin, gross customer exposure, net venue exposure, uncertain actions, capital and available liquidity are checked separately. Sufficient aggregate assets do not imply accessible payout cash.
+Cinder checks your margin separately from the shared account's gross exposure, net venue position, pending operations, house capital and available liquidity. Assets can be sufficient in aggregate while not immediately accessible for a withdrawal.
 
-House-funded protection is separate from customer collateral. Reserve designation creates no cash. Eligible claims, committed protection and paid losses remain distinct; unpaid obligations survive fund exhaustion. Final coverage, priority, numerical limits and reserve calibration remain release decisions—not blanket insurance.
+## Protection mechanisms
 
-Customer liquidation, venue auto-deleveraging (ADL) and pool distress differ. Bounded restoration can preserve original entry economics when a replacement actually executes; Cinder bears its replacement-price difference and cost. Unrestored affected same-side quantity is reduced proportionally within its risk unit under the approved finite-lot rule.
+| Mechanism | What it does | Important limit |
+| --- | --- | --- |
+| Margin and admission checks | Limit new positions and commitments against user and pool resources. | Market shocks and venue actions can still breach a limit. |
+| Risk separation | Keeps exposure in defined risk units rather than treating every venue account as interchangeable. | Users in the same native margin account remain exposed to some shared venue actions. |
+| House protection fund | Pays eligible losses under the applicable coverage policy. | Coverage, claim priority and available capital are finite; this is not blanket insurance. |
+| ADL restoration | Attempts an authorized, capital-backed replacement after a venue reduces Cinder's position. | Restoration depends on execution, liquidity and the approved budget. |
+| Proportional reduction | Allocates affected quantity that cannot be restored among eligible same-side positions. | An otherwise healthy private position can still be reduced. |
 
-Cinder does not guarantee that healthy positions never get reduced, venue losses are always insured, or pooled treatment matches native accounts in every scenario. Fees depend on the venue and declared policy; there is no lowest-fee guarantee.
+Customer collateral and Cinder's loss-bearing capital are accounted for separately. Your ordinary trading loss is not automatically charged to other customers. Fund claims are also distinct from paid claims: an unpaid obligation does not disappear because protection capital is exhausted.
+
+## Risk units and ADL
+
+A **risk unit** is the group of positions and resources affected by the same venue account's margin and closeout rules. A failure in one unit is not automatically spread to unrelated units.
+
+Venue auto-deleveraging (ADL) can reduce Cinder's aggregate position even when some individual customers are healthy. Cinder first applies the account's restoration policy. For an authorized replacement that executes, original entry economics are preserved and the replacement-price difference and execution cost are assigned to Cinder's house resources.
+
+If affected quantity remains unrestored, it is reduced proportionally among eligible positions on the affected side, within that risk unit. Allocation uses whole lots and the policy's deterministic rounding rule.
+
+### Example
+
+Alice is long 6 lots and Bob is long 4 lots in the same affected group. After any restoration, 5 lots still need to be reduced.
+
+Alice loses 3 lots and Bob loses 2 lots: each position is reduced by 50%. Their remaining positions are 3 and 2 lots. This reduction does not mean either customer breached their individual margin requirement.
+
+## What protection does not promise
+
+Cinder does not guarantee that every healthy position survives a shared-account event, that every venue loss is covered, or that pooled treatment always matches a separate native account.
+
+Available coverage and limits follow the policy applicable to your account. Fees follow the venue and Cinder's stated fee policy; they are not a guarantee of the lowest fee in every circumstance.

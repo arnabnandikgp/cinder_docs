@@ -1,6 +1,6 @@
 ---
 title: "View"
-description: "Return a compact private account snapshot."
+description: "Read a compact account snapshot."
 playground: "none"
 ---
 
@@ -8,13 +8,9 @@ playground: "none"
 
 **Permission:** Owner or live READ agent.
 
-Return a compact private account snapshot. The same command is available over [WebSocket](/api/websocket).
+Read a compact account snapshot. The same command is available over [WebSocket](/api/websocket).
 
-<Note>
-  Fields below describe the SDK request **before encryption** and the decoded reply.
-  The HTTP body is encrypted binary `application/octet-stream`, not JSON.
-  Use a verified [SDK client](/quickstart); the interactive playground is disabled.
-</Note>
+<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -97,16 +93,12 @@ A view is not withdrawable cash or a proof of backing.
 
 ## Behavior
 
-View: epoch, signed cash/funding quote atoms, explicit held amount, signed position lots/remaining basis and retained operation IDs. Not withdrawable cash or proof of backing. Use [account reads](/api/reads/account) for optional qualified risk and valuation.
+The view returns the account epoch, settled cash, recognized unsettled funding, explicit reservations, positions and retained operation IDs.
+
+For marked equity and margin information, use [account reads](/api/reads/account). A compact view is not a withdrawable-funds quote or a proof of backing.
 
 ## Errors and reconciliation
 
-[Typed errors](/api/errors) are returned inside the encrypted reply, not as
-field-specific HTTP status codes. Invalid fields, expired or out-of-scope authority,
-conflicting intent IDs and unavailable required evidence fail closed.
-
-For qualified risk and valuation, use [account reads](/api/reads/account).
-
-A delivery error or timeout is **not a rejection**. Reconnect with fresh attestation
-and reconcile the original operation ID before any economic retry.
-See [lifecycle](/api/lifecycle), [limits](/api/limits) and [availability](/status).
+See [errors](/api/errors) for response codes and [lifecycle](/api/lifecycle)
+for delivery failures, receipts and retries. Keep the original operation ID when
+reconciling an uncertain result.

@@ -1,18 +1,26 @@
 ---
-title: "Availability"
-description: "Implementation, test evidence and live availability are different."
+title: "Product scope"
+description: "What Cinder supports and how its account model works."
 ---
 
-This reference describes the merged HTTP/WebSocket implementation. **No public trading endpoint, production client release or customer onboarding service is announced here.** There is no published npm SDK package.
+Cinder provides private perpetuals accounts with pooled execution on supported Solana venues. Pacifica is the first venue integration.
 
-| Component | Evidence / availability |
+| Area | Scope |
 | --- | --- |
-| HTTP/WebSocket commands, private reads and subscriptions | Implemented; offline Node and actual-browser process tests |
-| Nitro confidential application | Earlier bounded disposable hardware tests; the changed web-enabled image still needs qualification |
-| Pacifica execution and Solana funding/custody components | Implemented with bounded research and offline fixtures; joined live brokerage qualification remains pending |
-| Recovery program | Implemented local checks; integrated independent claim delivery and venue wind-down remain pending |
-| Public customer trading / mainnet deposits | Not enabled or qualified by these docs |
+| Account access | Wallet-authenticated owners and permissioned trading agents |
+| Trading | Bounded GTC, add-liquidity-only and immediate-or-cancel orders; cancellation; selectable leverage up to a market cap |
+| Account data | Private balances, positions, operations, orders, fills, funding and history |
+| Integrations | The same signed commands over HTTP and WebSocket, plus private WebSocket updates |
+| Funds | Solana deposits, collateral routing and withdrawals to the account's configured recipient |
+| Protection | Margin and pool-risk limits, policy-defined house protection and conditional ADL restoration |
+| Recovery | Operator-assisted settlement followed by independently verifiable, owner-signed claims |
 
-Current scope is preconfigured accounts, perps, pooled external execution, and the [documented commands](/api/overview). No self-service signup, isolated-margin product, trigger orders, atomic modify/batch orders, spot, referrals, public chart/orderbook API or native URL-only compatibility is included.
+Shared execution does not make your account an investment-pool share. Your trading results are recorded individually; ordinary trading losses are not automatically shared with other customers.
 
-The [implementation tracker](https://github.com/arnabnandikgp/cinder/blob/product/tee-v1/docs/implementation/TRACKER.md) records exact checkpoints. Test success is not an independent audit, complete solvency proof or guarantee of venue behavior.
+## Interface boundaries
+
+The documented interface covers perpetuals. It does not expose spot trading, isolated-margin accounts, trigger orders, TP/SL, atomic order replacement, batch orders, referrals or public chart/orderbook feeds.
+
+Cinder's SDK handles its own authentication and encryption. It is not a URL-only replacement for a venue's native client.
+
+See [accounts](/guides/accounts), [risk and protection](/security/risk) and [recovery](/security/recovery) for the account rules.

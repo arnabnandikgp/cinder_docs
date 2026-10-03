@@ -1,12 +1,30 @@
 ---
 title: "Trading"
-description: "Bounded orders, actual fills and honest lifecycle reporting."
+description: "Orders, fills, cancellation and leverage."
 ---
 
-An [order](/api/methods/order) specifies signed lots, execution-price bounds, fee cap per lot, time-in-force and financial expiry. GTC, add-liquidity-only (ALO) and bounded immediate-or-cancel (IOC) are supported. IOC is not an unbounded market-order or full-fill guarantee.
+An [order](/api/methods/order) specifies a market, signed size, execution-price bounds, maximum fee per lot and time-in-force.
 
-Actual attributed fills change positions and entry basis. Partial fills, repeated entries, reductions and reversals differ from admission and acknowledgement. Funding recognition, settlement and fees are separate postings.
+| Order type | Behavior |
+| --- | --- |
+| GTC | A bounded limit order that can remain open until cancelled or completed. |
+| ALO | Add-liquidity-only: the order must not execute immediately as a taker. |
+| IOC | Bounded immediate execution; any unfilled remainder is cancelled. It may fill partially or not at all. |
 
-Private reduce-only constrains your position, not simply the venue's net position. A [cancel](/api/methods/cancel) can race a fill. After timeout, reconnect and [query the original operation](/api/methods/operation); do not create a new economic ID.
+Cinder records actual fills, not acknowledgements, as changes to your position. Repeated entries, partial closes and reversals update your remaining position and entry basis. Funding and fees are recorded separately.
 
-Select leverage up to the governed market cap. This does not create native isolated margin. Server-side stops, TP/SL, batch and atomic replacement are outside this interface.
+## Deadlines and cancellation
+
+`goodUntil` is the latest time the order may be dispatched. It is **not** an automatic cancellation time for an already dispatched GTC or ALO order. Use [cancel](/api/methods/cancel) to stop a resting order.
+
+Cancellation can race with execution. A cancellation acknowledgement does not rule out a fill that has already occurred or is still being reported. Check the original order's receipt for the reconciled result.
+
+If delivery fails, keep the original request ID and [look up the operation](/api/methods/operation) before retrying. A new ID represents a new intent, not a continuation of the old request.
+
+## Leverage and reduce-only
+
+Choose leverage up to the market's maximum. Your selection controls private margin requirements; it does not create a separate native account or an isolated-margin position.
+
+Reduce-only applies to **your Cinder position**: it must reduce that position without reversing it. The resulting trade can still change the shared venue account's margin requirement, so it remains subject to risk checks.
+
+See [exact units](/api/units) for lots, ticks and quote atoms, and [risk and protection](/security/risk) for pooled-account limits.

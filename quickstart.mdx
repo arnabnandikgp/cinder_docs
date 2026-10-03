@@ -1,61 +1,148 @@
 ---
-title: "SDK quickstart"
-description: "Connect a preconfigured account through the confidential web SDK."
+title: "SDK integration"
+description: "Configure a wallet-authenticated client and read your private account."
 ---
 
-Read [availability](/status) first. You need an independently approved client build and release policy, configured private account, network/deployment IDs, policy version, current authority epoch, and an Ed25519 wallet or scoped agent signer. Connecting a wallet alone does not create an account.
+This example connects an existing Cinder account and returns its compact account view. Account setup supplies the configuration below; connecting a wallet authenticates that account rather than creating a new one.
 
-## Obtain the client
+## Prerequisites
 
-Source is in `clients/private`; the reviewed web build produces `sdk.js`, `channel.js` and `channel_bg.wasm` under `tools/web-channel/pkg`. These are not published npm packages. Maintainers reproduce it with the [tracked preparation and qualification instructions](https://github.com/arnabnandikgp/cinder/blob/product/tee-v1/tools/web-channel/README.md).
+| Value | Where it comes from |
+| --- | --- |
+| `sdk.js`, `channel.js`, `channel_bg.wasm` | The trusted Cinder web SDK bundle used by your application. Keep the three files together. |
+| HTTPS origin | The connection URL in your Cinder deployment configuration. |
+| Network and deployment IDs | Deployment configuration; each is a nonzero 32-byte ID. |
+| Manifest hash and PCR0/1/2 | The independently trusted enclave release policy. Do not derive the expected policy from the relay's attestation response. |
+| Private account ID | Your account configuration; it is not your wallet address or the pooled venue account. |
+| Policy version and current authority epoch | Your account configuration. Refresh the epoch after revocation or another authority change. |
+| Authentication lifetime | The maximum permitted request duration in the applicable account policy. |
+| Wallet or agent signer | Your wallet connection or authorized agent key. It signs messages locally. |
 
-Do not distribute fixture bundles, fixture roots or test release policies. Obtain code and policy independently of the relay you verify.
+A signer exposes `publicKey: Uint8Array` (32 bytes) and `signMessage(bytes)`, returning a 64-byte Ed25519 signature. It never sends its private key to Cinder.
 
-## Connect and query
+## Configuration example
 
-This excerpt assumes those three artifacts are in your application. Variables are supplied by a reviewed deployment; there is no default live URL.
+Replace every placeholder with the corresponding configuration value. Hashes and IDs are hexadecimal **without** a `0x` prefix. The host and numeric policy values below are examples, not a deployment announcement.
+
+```ts
+interface IntegrationConfig {
+  baseUrl: string;
+  networkHex: string;
+  deploymentHex: string;
+  manifestHex: string;
+  pcrHex: readonly [string, string, string];
+  accountHex: string;
+  policyVersion: string;
+  accountEpoch: string;
+  maximumAuthLifetimeMs: string;
+}
+
+const config: IntegrationConfig = {
+  baseUrl: 'https://<your-cinder-origin>',
+  networkHex: '<64 hex characters>',
+  deploymentHex: '<64 hex characters>',
+  manifestHex: '<64 hex characters>',
+  pcrHex: ['<96 hex characters>', '<96 hex characters>', '<96 hex characters>'],
+  accountHex: '<64 hex characters>',
+  policyVersion: '1',
+  accountEpoch: '1',
+  maximumAuthLifetimeMs: '60000',
+};
+```
+
+## Connect and read
+
+Use the interface and configuration above in this module, alongside the web SDK bundle.
 
 ```ts
 import init, * as core from './channel.js';
-import { connectWebChannel, PrivateClient } from './sdk.js';
-await init();
+import { connectWebChannel, PrivateClient, type MessageSigner } from './sdk.js';
 
-const channel = await connectWebChannel({
-  baseUrl: configuredHttpsOrigin,
-  policy: independentlyApprovedRelease,
-  core,
-});
-const client = new PrivateClient(channel, walletSigner, {
-  domain: approvedDomain,
-  account: privateAccountId,
-  policy: approvedPolicyVersion,
-});
-const result = await client.request({
-  id: queryId,
-  epoch: currentAccountEpoch,
-  expiresAt: authExpiry,
-  command: { kind: 'view' },
-});
-if (result.kind === 'error') {
-  // Handle the encrypted error; do not invent success.
+function bytes(hex: string, length: number): Uint8Array {
+  if (!new RegExp('^[0-9a-fA-F]{' + length * 2 + '}$').test(hex)) {
+    throw new Error('Replace configuration placeholders with approved values');
+  }
+  const value = Uint8Array.from(hex.match(/../g)!, pair => parseInt(pair, 16));
+  if (!value.some(byte => byte !== 0)) throw new Error('Zero ID or hash');
+  return value;
+}
+
+function positive(value: string, maximum = (1n << 64n) - 1n): bigint {
+  if (!/^[1-9][0-9]*$/.test(value)) throw new Error('Invalid configuration integer');
+  const number = BigInt(value);
+  if (number > maximum) throw new Error('Configuration integer out of range');
+  return number;
+}
+
+export async function readAccount(
+  config: IntegrationConfig, walletSigner: MessageSigner,
+) {
+  const network = bytes(config.networkHex, 32);
+  const deployment = bytes(config.deploymentHex, 32);
+  const account = bytes(config.accountHex, 32);
+  const policyVersion = Number(positive(config.policyVersion, (1n << 32n) - 1n));
+  const epoch = positive(config.accountEpoch);
+  const authLifetime = positive(config.maximumAuthLifetimeMs);
+  const policy = {
+    network, deployment, manifest: bytes(config.manifestHex, 32),
+    pcrs: [
+      bytes(config.pcrHex[0], 48), bytes(config.pcrHex[1], 48),
+      bytes(config.pcrHex[2], 48),
+    ] as const,
+  };
+
+  await init();
+  const channel = await connectWebChannel({ baseUrl: config.baseUrl, policy, core });
+  try {
+    const client = new PrivateClient(channel, walletSigner, {
+      domain: { network, deployment }, account, policy: policyVersion,
+    });
+    const requestedExpiry = BigInt(Date.now()) + authLifetime;
+    const expiresAt = requestedExpiry < channel.context().expiresAt
+      ? requestedExpiry : channel.context().expiresAt;
+    const result = await client.request({
+      id: crypto.getRandomValues(new Uint8Array(32)),
+      epoch, expiresAt, command: { kind: 'view' },
+    });
+    if (result.kind === 'error') throw new Error('Request returned ' + result.code);
+    if (result.kind !== 'view') throw new Error('Unexpected response');
+    return result;
+  } finally {
+    channel.close();
+  }
 }
 ```
 
-`walletSigner` supplies a 32-byte public key and `signMessage(bytes)` returning a 64-byte Ed25519 signature. The SDK binds it to the verified session. `authExpiry` must fit both the channel expiry and the deployment's authentication lifetime. Never pass the wallet's private key to the relay.
+Call `readAccount(config, walletSigner)` from your connected-wallet flow. With an authorized account and valid configuration, it returns a decoded value such as:
 
-Set `transport: 'websocket'` for socket commands/subscriptions; HTTP is default. Serialize requests. See [authentication](/api/authentication), [units](/api/units) and [unknown outcomes](/api/lifecycle).
+```ts Decoded account view
+({
+  kind: 'view',
+  epoch: 1n,
+  cash: 1000n,
+  funding: 0n,
+  held: 0n,
+  positions: [],
+  operations: [],
+})
+```
 
-## Reference examples
+The amounts are illustrative quote atoms, not dollar balances. See [accounts](/guides/accounts) and [units](/api/units). An invalid placeholder fails before connection; an application error returns a code described in [errors](/api/errors).
 
-API pages reuse this verified `client`. Their `ctx` is your application's input
-context, not an SDK-generated object: `id`, `epoch` and `expiresAt` are the request
-values above; `market` is a configured market ID; `goodUntil` is the financial
-deadline. Cancel/lookup examples use `originalOrderId` and a distinct
-`cancelAttemptId`. Grant examples use the agent's `agentPublicKey` and
-`agentExpiresAt`; import `READ`, `TRADE` and `CANCEL` from `sdk.js`.
+## Continue with commands and subscriptions
 
-Decoded-response examples are illustrative TypeScript objects, not JSON to submit.
-`recordedIntentDigest`, `snapshotRevision` and `quoteUnitId` stand for 32-byte
-values from the corresponding record/configuration; `observedAt` is a qualified
-millisecond timestamp. Integer amounts illustrate encoding, not live prices or
-approved leverage/fee policy.
+The example closes its channel after one read. For a trading client, retain the verified channel for its valid lifetime and serialize requests. Add `transport: 'websocket'` to the connection options for socket commands and [subscriptions](/api/websocket).
+
+Reference pages use `client` for this configured client and `ctx` for application-supplied request inputs:
+
+| Input | Meaning |
+| --- | --- |
+| `id`, `epoch`, `expiresAt` | Request ID, current account epoch and authentication expiry. |
+| `market` | Configured 32-byte market ID. |
+| `goodUntil` | The command's financial deadline, separate from authentication expiry. |
+| `originalOrderId`, `cancelAttemptId` | Original order request ID and distinct cancellation-attempt ID. |
+| `agentPublicKey`, `agentExpiresAt` | Agent key and grant expiry. Import `READ`, `TRADE` and `CANCEL` from `sdk.js` for permission masks. |
+
+In read examples, `Context` is an application-defined type with the fields above, not a type exported by the SDK. Import `ReadFamily` from `sdk.js` when using the generic paging example.
+
+Decoded examples also use `recordedIntentDigest`, `snapshotRevision` and `quoteUnitId` for 32-byte values from their corresponding records, `observedAt` for a millisecond timestamp, and `approvedPolicyVersion` for the configured u32 policy. Examples show typed SDK values, not JSON to send over HTTP.

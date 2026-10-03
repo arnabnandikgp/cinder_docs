@@ -1,10 +1,34 @@
 ---
 title: "Agents"
-description: "Delegate a strategy, not custody."
+description: "Authorize a trading client without giving it custody."
 ---
 
-A Cinder agent is a separate Ed25519 key authorized for your private account. It is not a native venue agent and does not receive pooled execution keys.
+A Cinder agent is a separate Ed25519 key that you authorize to act on your private account. It is not a native venue agent and never receives Cinder's pooled execution keys.
 
-An owner [grant](/api/methods/grant) permits READ, TRADE and/or CANCEL for one market with expiry, per-order lot/fee caps and a lifetime accepted-order budget. An agent cancels only its own admitted orders. READ permits authorized account views; the active-grant view exposes only that agent's grant.
+## Permissions
 
-Agents cannot withdraw, choose recipients, set leverage, redelegate or administer the pool. [Revocation](/api/methods/revoke) advances the account epoch and invalidates all old grants. It does not undo an exposed native order; cancellation and reconciliation remain separate.
+The owner creates a [grant](/api/methods/grant) with an expiry, permissions and order limits.
+
+| Permission | Access |
+| --- | --- |
+| READ | Read the bound account's balances, positions, operations and history across markets. The grant's market does **not** restrict READ to that market. |
+| TRADE | Place orders in the grant's market, subject to per-order size and fee limits and a lifetime accepted-order budget. |
+| CANCEL | Cancel orders admitted under that agent's key in the grant's market. It cannot cancel the owner's or another agent's orders. |
+
+The agent-grant directory shows an agent only its own active grant, not other agents' keys. An account owner can see the account's grant directory.
+
+<Warning>
+READ exposes account information across markets. Grant it only to clients you trust with that information.
+</Warning>
+
+Agents cannot withdraw funds, change recipients, select leverage, authorize another agent or administer Cinder.
+
+## Revocation
+
+<Warning>
+Revocation disables all existing agent grants for the account. It does not automatically cancel outstanding orders.
+</Warning>
+
+[Revoke](/api/methods/revoke) advances the account's authority epoch. Requests signed under the previous epoch lose authority, including requests from previously authorized agents.
+
+The owner must cancel or reconcile outstanding orders separately. Use the current epoch for subsequent requests and explicitly grant any agent that should regain access.

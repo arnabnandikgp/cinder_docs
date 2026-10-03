@@ -1,6 +1,6 @@
 ---
 title: "Order"
-description: "Admit one bounded order; acceptance is not execution."
+description: "Place a bounded order and follow its execution."
 playground: "none"
 ---
 
@@ -8,13 +8,9 @@ playground: "none"
 
 **Permission:** Owner or scoped TRADE agent.
 
-Admit one bounded order; acceptance is not execution. The same command is available over [WebSocket](/api/websocket).
+Place a bounded order and follow its execution. The same command is available over [WebSocket](/api/websocket).
 
-<Note>
-  Fields below describe the SDK request **before encryption** and the decoded reply.
-  The HTTP body is encrypted binary `application/octet-stream`, not JSON.
-  Use a verified [SDK client](/quickstart); the interactive playground is disabled.
-</Note>
+<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -97,13 +93,13 @@ session binding, and signs the canonical [envelope](/api/authentication).
 </ParamField>
 
 <ParamField body="command.goodUntil" type="bigint (u64)" required>
-  Financial dispatch expiry in milliseconds, immutable on economic retry.
+  Latest permitted dispatch time in milliseconds, unchanged on retry. It does not automatically cancel an already dispatched resting order.
 </ParamField>
 
 ## Response fields
 
-The example uses illustrative quote atoms and configured IDs, not live venue data.
-A receipt records operation progress; acceptance is not execution or payment.
+The result uses the shared [receipt fields](/api/lifecycle#shared-receipt-fields).
+The fields below are most relevant to this method.
 
 <ResponseField name="kind" type="&quot;receipt&quot;" required>
   Response discriminator.
@@ -111,14 +107,6 @@ A receipt records operation progress; acceptance is not execution or payment.
 
 <ResponseField name="id" type="Uint8Array (32 bytes)" required>
   Durable operation ID. For an operation lookup, this is the target ID, not the query ID.
-</ResponseField>
-
-<ResponseField name="digest" type="Uint8Array (32 bytes)" required>
-  Commitment to the immutable economic intent.
-</ResponseField>
-
-<ResponseField name="policy" type="number (u32)" required>
-  Governed policy version.
 </ResponseField>
 
 <ResponseField name="outcome" type="Outcome" required>
@@ -129,14 +117,6 @@ A receipt records operation progress; acceptance is not execution or payment.
   Actual attributed signed lots, not requested quantity.
 </ResponseField>
 
-<ResponseField name="paid" type="bigint (i128)" required>
-  Qualified net payment to the beneficiary, in quote atoms.
-</ResponseField>
-
-<ResponseField name="railFees" type="bigint (i128)" required>
-  Actual customer-paid payout rail fees; not ordinary trading fees.
-</ResponseField>
-
 <ResponseField name="feeCap" type="bigint (i128)" required>
   Declared fee cap: absolute requested lots × fee-per-lot for orders, or extra rail-fee cap for payouts. Not the amount charged.
 </ResponseField>
@@ -145,22 +125,16 @@ A receipt records operation progress; acceptance is not execution or payment.
   Whether the operation may have escaped for external execution. False alone is not a final settlement guarantee.
 </ResponseField>
 
-<ResponseField name="allowPartial" type="boolean" required>
-  The recorded payout partial-dispatch consent. False for unrelated commands.
-</ResponseField>
-
 ## Behavior
 
-Receipt with declared total feeCap = abs(lots) × fee and actual signed filled lots. feeCap is not charged fees; actual ordinary-fill costs appear in [fills](/api/reads/fills). Admission requires joined risk and reservations. Agent limits/budget apply. IOC may partially fill or not fill. Native capability must also be qualified; no unbounded market-order path.
+The receipt records the declared total fee cap, `abs(lots) × fee`, and actual signed filled lots. Charged trading fees appear in [fills](/api/reads/fills).
+
+Admission checks margin, pending outcomes and available pool resources before reserving funds. Agent size, fee and accepted-order limits also apply. IOC may fill partially or not at all.
+
+`goodUntil` is the latest permitted dispatch time. It does **not** cancel an already dispatched GTC or ALO order when that time arrives. Use [cancel](/api/methods/cancel) for a resting order; its reservations remain until execution is reconciled.
 
 ## Errors and reconciliation
 
-[Typed errors](/api/errors) are returned inside the encrypted reply, not as
-field-specific HTTP status codes. Invalid fields, expired or out-of-scope authority,
-conflicting intent IDs and unavailable required evidence fail closed.
-
-
-
-A delivery error or timeout is **not a rejection**. Reconnect with fresh attestation
-and reconcile the original operation ID before any economic retry.
-See [lifecycle](/api/lifecycle), [limits](/api/limits) and [availability](/status).
+See [errors](/api/errors) for response codes and [lifecycle](/api/lifecycle)
+for delivery failures, receipts and retries. Keep the original operation ID when
+reconciling an uncertain result.
