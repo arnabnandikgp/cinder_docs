@@ -8,19 +8,20 @@ Cinder provides private perpetuals accounts with pooled execution on supported S
 | Area | Scope |
 | --- | --- |
 | Account access | Wallet-authenticated owners and permissioned trading agents |
-| Trading | Bounded GTC, add-liquidity-only and immediate-or-cancel orders; cancellation; selectable leverage up to a market cap |
+| Trading | Limit, post-only and immediate-or-cancel orders with price and fee limits; cancellation; leverage up to each market's cap |
 | Account data | Private balances, positions, operations, orders, fills, funding and history |
-| Integrations | The same signed commands over HTTP and WebSocket, plus private WebSocket updates |
+| Integrations | A browser or automated trading client using the SDK over HTTP or WebSocket |
 | Funds | Solana deposits, collateral routing and withdrawals to the account's configured recipient |
-| Protection | Margin and pool-risk limits, policy-defined house protection and conditional ADL restoration |
-| Recovery | Operator-assisted settlement followed by independently verifiable, owner-signed claims |
+| Protection | Individual margin checks, shared-account risk limits and protection subject to the account's coverage policy |
+| Recovery | Final settlement coordinated by the recovery operator, followed by claims users can verify and submit themselves |
 
 Shared execution does not make your account an investment-pool share. Your trading results are recorded individually; ordinary trading losses are not automatically shared with other customers.
 
-## Interface boundaries
+## Understand your account
 
-The documented interface covers perpetuals. It does not expose spot trading, isolated-margin accounts, trigger orders, TP/SL, atomic order replacement, batch orders, referrals or public chart/orderbook feeds.
+- [Your account](/guides/accounts): how balances, positions and available funds are recorded.
+- [Trading](/guides/trading): order types, leverage and cancellation.
+- [Risk and protection](/security/risk): how shared-account events can affect a position.
+- [Recovery](/security/recovery): the steps required before final funds can be claimed.
 
-Cinder's SDK handles its own authentication and encryption. It is not a URL-only replacement for a venue's native client.
-
-See [accounts](/guides/accounts), [risk and protection](/security/risk) and [recovery](/security/recovery) for the account rules.
+For application integration and supported commands, start with the [API overview](/api/overview).

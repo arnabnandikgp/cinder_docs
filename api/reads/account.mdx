@@ -11,7 +11,7 @@ playground: "none"
 Balances, reservations, equity and margin. Results belong to your account. The query supports HTTP and
 [WebSocket](/api/websocket), including subscriptions.
 
-<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
+<Note>Configure `client` and the example inputs using [SDK integration](/quickstart). Examples show typed SDK values, not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -56,7 +56,7 @@ Use the configured [client and envelope](/api/authentication). Each request supp
 </ParamField>
 
 <ParamField body="command.query.family" type="&quot;account&quot;" required>
-  Selects this exact private projection.
+  Selects this account-data family.
 </ParamField>
 
 <ParamField body="command.query.limit" type="number" required>
@@ -69,8 +69,7 @@ Use the configured [client and envelope](/api/authentication). Each request supp
 
 ## Response fields
 
-Illustrative decoded SDK values are shown at the right; absent optional fields
-mean unavailable, not zero. Empty `rows` is valid.
+Examples show decoded SDK values. Absent optional fields mean unavailable, not zero. Empty `rows` is valid.
 
 <ResponseField name="kind" type="&quot;page&quot;" required>
   Paged-response discriminator.
@@ -119,7 +118,7 @@ mean unavailable, not zero. Empty `rows` is valid.
   Present when the required current risk data is available.
   <Expandable title="risk fields">
 <ResponseField name="equity" type="bigint (i128)" required>
-  Conservative risk equity.
+  Account value used for margin checks; excludes positive unsettled funding while including recognized funding owed.
 </ResponseField>
 
 <ResponseField name="initial" type="bigint (i128)" required>
@@ -131,11 +130,11 @@ mean unavailable, not zero. Empty `rows` is valid.
 </ResponseField>
 
 <ResponseField name="outcomeRequirement" type="bigint (i128)" required>
-  Requirement across the evaluated pending outcomes.
+  Collateral requirement across evaluated pending-order outcomes, including adverse execution costs and fees.
 </ResponseField>
 
 <ResponseField name="otherHeld" type="bigint (i128)" required>
-  Other amounts held by the risk calculation.
+  Non-order commitments, such as amounts reserved for pending withdrawals.
 </ResponseField>
 
 <ResponseField name="free" type="bigint (i128)" required>
@@ -152,7 +151,9 @@ mean unavailable, not zero. Empty `rows` is valid.
 
 ## Behavior
 
-Absent risk or valuation is unavailable, not zero. Cash, marked equity and `risk.free` are distinct; none bypasses fresh payout admission.
+Use `cash` for settled balance, `accountingEquity` for marked account value and `risk.free` for collateral remaining after the current risk requirements. These amounts can differ. Positive unsettled funding contributes to accounting equity but not risk equity.
+
+If `risk` or `accountingEquity` is absent, display it as unavailable rather than zero. A withdrawal still needs current margin and payment-liquidity checks; `risk.free` is not an instantly payable quote. See [your account](/guides/accounts) for the balance example.
 
 ## Paging and errors
 

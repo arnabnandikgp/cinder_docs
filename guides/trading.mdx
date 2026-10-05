@@ -3,15 +3,19 @@ title: "Trading"
 description: "Orders, fills, cancellation and leverage."
 ---
 
-An [order](/api/methods/order) specifies a market, signed size, execution-price bounds, maximum fee per lot and time-in-force.
+An [order](/api/methods/order) sets the market, buy or sell direction, size, acceptable execution prices and fee limit. Time-in-force determines what happens to any unfilled quantity.
 
 | Order type | Behavior |
 | --- | --- |
-| GTC | A bounded limit order that can remain open until cancelled or completed. |
-| ALO | Add-liquidity-only: the order must not execute immediately as a taker. |
-| IOC | Bounded immediate execution; any unfilled remainder is cancelled. It may fill partially or not at all. |
+| GTC — good-til-cancelled | A limit order that can remain open until cancelled or completed. |
+| ALO — add-liquidity-only | A post-only order: it must add resting liquidity rather than execute immediately as a taker. |
+| IOC — immediate-or-cancel | Execute within the specified price bounds, then cancel any unfilled remainder. It may fill partially or not at all. |
 
 Cinder records actual fills, not acknowledgements, as changes to your position. Repeated entries, partial closes and reversals update your remaining position and entry basis. Funding and fees are recorded separately.
+
+**Entry basis** is the recorded entry value of the remaining position, not collateral paid to buy the underlying asset. It is used to calculate trading PnL. See [positions](/api/reads/positions) for a worked example.
+
+The order command does not include stop-loss, take-profit or other trigger conditions. To change a resting order, cancel it, reconcile any fills and submit a new order; this is not an atomic replacement. Batch submission is not part of this command.
 
 ## Deadlines and cancellation
 

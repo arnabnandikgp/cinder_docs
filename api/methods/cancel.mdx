@@ -10,7 +10,7 @@ playground: "none"
 
 Cancel an order and account for concurrent fills. The same command is available over [WebSocket](/api/websocket).
 
-<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
+<Note>Configure `client` and the example inputs using [SDK integration](/quickstart). Examples show typed SDK values, not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -56,7 +56,7 @@ session binding, and signs the canonical [envelope](/api/authentication).
 </ParamField>
 
 <ParamField body="expiresAt" type="bigint (u64)" required>
-  Authentication expiry in milliseconds, within the verified session and deployment limits.
+  Expiry timestamp in milliseconds, within the verified channel and configured authentication limits; not a validity duration.
 </ParamField>
 
 <ParamField body="command.kind" type="&quot;cancel&quot;" required>
@@ -85,7 +85,7 @@ The fields below are most relevant to this method.
 </ResponseField>
 
 <ResponseField name="id" type="Uint8Array (32 bytes)" required>
-  Durable operation ID. For an operation lookup, this is the target ID, not the query ID.
+  ID of this recorded command, matching the request's `id`.
 </ResponseField>
 
 <ResponseField name="outcome" type="Outcome" required>
@@ -93,11 +93,11 @@ The fields below are most relevant to this method.
 </ResponseField>
 
 <ResponseField name="filled" type="bigint (i64)" required>
-  Actual attributed signed lots, not requested quantity.
+  Actual signed fills on the target order, not quantity cancelled or the original requested size.
 </ResponseField>
 
 <ResponseField name="possiblyExposed" type="boolean" required>
-  Whether the operation may have escaped for external execution. False alone is not a final settlement guarantee.
+  Whether an action or signature may have reached external execution. This is not confirmation of a fill or payment.
 </ResponseField>
 
 ## Behavior

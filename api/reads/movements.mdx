@@ -1,5 +1,5 @@
 ---
-title: "Book movements"
+title: "Account movements"
 description: "Changes to your recorded cash, funding and positions."
 playground: "none"
 ---
@@ -11,7 +11,7 @@ playground: "none"
 Changes to your recorded cash, funding and positions. Results belong to your account. The query supports HTTP and
 [WebSocket](/api/websocket), including subscriptions.
 
-<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
+<Note>Configure `client` and the example inputs using [SDK integration](/quickstart). Examples show typed SDK values, not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -60,7 +60,7 @@ Use the configured [client and envelope](/api/authentication). Each request supp
 </ParamField>
 
 <ParamField body="command.query.family" type="&quot;movements&quot;" required>
-  Selects this exact private projection.
+  Selects this account-data family.
 </ParamField>
 
 <ParamField body="command.query.limit" type="number" required>
@@ -73,8 +73,7 @@ Use the configured [client and envelope](/api/authentication). Each request supp
 
 ## Response fields
 
-Illustrative decoded SDK values are shown at the right; absent optional fields
-mean unavailable, not zero. Empty `rows` is valid.
+Examples show decoded SDK values. Absent optional fields mean unavailable, not zero. Empty `rows` is valid.
 
 <ResponseField name="kind" type="&quot;page&quot;" required>
   Paged-response discriminator.
@@ -108,7 +107,7 @@ mean unavailable, not zero. Empty `rows` is valid.
 </ResponseField>
 
 <ResponseField name="before" type="Book" required>
-  Customer book immediately before the committed transition.
+  Your recorded cash, funding and positions immediately before the change.
   <Expandable title="before fields">
 <ResponseField name="cash" type="bigint (i128)" required>
   Settled cash in quote atoms.
@@ -125,7 +124,7 @@ mean unavailable, not zero. Empty `rows` is valid.
 </ResponseField>
 
 <ResponseField name="after" type="Book" required>
-  Customer book immediately after the same committed transition.
+  Your recorded cash, funding and positions immediately after the same change.
   <Expandable title="after fields">
 <ResponseField name="cash" type="bigint (i128)" required>
   Settled cash in quote atoms.
@@ -145,7 +144,11 @@ mean unavailable, not zero. Empty `rows` is valid.
 
 ## Behavior
 
-Includes applied operator or forced changes, fees, funding and receipts that change the customer book. Compound changes are not mislabeled as deposits. Holds or pool treasury moves without a customer book change are not cash postings. The index derives from authoritative commit/replay; it is not an editable second ledger.
+Use `before` and `after` to see how a recorded event changed your cash, unsettled funding or positions. Rows can include fees, funding settlement, confirmed payments, liquidation and other applied account adjustments.
+
+A single event can change several values. For example, funding settlement changes both cash and unsettled funding; do not classify every cash increase as a deposit. The response does not include a separate event-type label.
+
+Changes only to reservations or transfers of pooled collateral that leave your recorded cash, funding and positions unchanged do not create a movement row. See [account reads](/api/reads/account) for reservations and [operations](/api/reads/operations) for request progress.
 
 ## Paging and errors
 

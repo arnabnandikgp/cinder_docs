@@ -9,19 +9,23 @@ Ordinary withdrawals use the authenticated [payout](/api/methods/payout) workflo
 
 The recovery operator stops competing writers and venue actions, reconciles uncertain operations, settles remaining exposure and returns accessible funds to the Solana custody vault.
 
-Final claims are then derived from the settled account records. Authorized publication and activation make the funded recovery estate available for claims. A heartbeat timeout cannot skip these steps.
+Final claims are then calculated from the settled account records. The authorized operator publishes that final claim set and activates it once the required backing is in the vault. A missed service heartbeat does not open withdrawals automatically.
 
 ## Your recovery package
 
-Your recipient-encrypted package contains your final claim, destination, previous-payment basis and the Merkle proof needed to verify inclusion in the published recovery root.
+The recovery process produces a package encrypted for your dedicated recovery key. It contains your final amount, configured destination, records needed to account for previous payments, and a Merkle proof showing that your claim belongs to the published claim set. It represents the final settled amount, not an earlier displayed balance or open-position estimate.
+
+The **manifest** is the signed description of that claim set and its settlement context. The **package locator** identifies where to retrieve your encrypted package; it is not the key that decrypts it.
 
 1. Obtain the published, signed recovery manifest and your privately delivered package locator.
 2. Retrieve the encrypted package from a recovery store, independently of the ordinary trading API.
 3. Decrypt it locally with your dedicated recovery key.
-4. Verify the manifest, claim, active recovery state and vault backing.
+4. Use the recovery client to verify the manifest, claim, active recovery state and vault backing.
 5. Build and sign the claim with your owner wallet, then submit it to Solana.
 
 The client verifies the configured payout destination; a package cannot redirect payment to an arbitrary recipient. Previous confirmed payouts are accounted for once, so they cannot be claimed again.
+
+You need your owner wallet to authorize the claim and your separate recovery key to decrypt the package. Having only one does not replace the other. The proof verifies membership in the final claim set; it does not independently reconstruct your trading history or establish the correctness of every settlement calculation.
 
 ## Keep your recovery material
 

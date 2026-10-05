@@ -9,18 +9,18 @@ The account owner signs with their Solana wallet. An authorized [agent](/guides/
 
 | Field | Type and meaning |
 | --- | --- |
-| `domain.network`, `domain.deployment` | Nonzero 32-byte network and deployment IDs from your configuration. |
-| `account` | Your nonzero 32-byte private account ID. |
+| `domain.network`, `domain.deployment` | Nonzero 32-byte identifiers for the configured Cinder environment and logical deployment, not numeric blockchain chain IDs. |
+| `account` | Your configured nonzero 32-byte private account ID, not your wallet or a pooled venue account. |
 | `id` | Nonzero 32-byte request ID. Preserve it for the same economic intent. |
-| `policy` | The configured nonzero u32 policy version. |
-| `epoch` | The account's current positive u64 authority epoch. |
+| `policy` | The approved nonzero u32 financial/precision policy revision, not the SDK version. |
+| `epoch` | The account's current positive u64 authorization generation; revocation advances it. |
 | `signer` | The owner or currently authorized agent's Ed25519 public key. |
 | `session` | Verified channel binding, supplied by the SDK. |
-| `expiresAt` | Authentication expiry in milliseconds, within the channel and account-policy limits. |
+| `expiresAt` | Authentication expiry timestamp in milliseconds, within channel and configured authentication limits; not the order's financial deadline. |
 | `command` | The exact typed command. |
 | `signature` | A 64-byte Ed25519 signature over the SDK's canonical signing message. |
 
-The SDK provides the domain, account, policy and session fields from its configuration. Each `request` supplies `id`, `epoch`, `expiresAt` and `command`.
+The client uses the supplied domain, account and policy configuration; the verified channel supplies the session binding. Each `request` supplies `id`, `epoch`, `expiresAt` and `command`. See [SDK integration](/quickstart) for the configuration inputs and their sources. Neither an account ID nor a guessed configuration value grants access.
 
 ## Attestation and signing
 

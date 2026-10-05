@@ -3,7 +3,9 @@ title: "Risk and protection"
 description: "Margin, shared-account risk and policy-defined protection."
 ---
 
-Cinder checks your margin separately from the shared account's gross exposure, net venue position, pending operations, house capital and available liquidity. Assets can be sufficient in aggregate while not immediately accessible for a withdrawal.
+Cinder checks both your individual margin and the resources backing the shared venue account. Opposing customer positions can reduce the venue's net position without eliminating either customer's exposure. Pending orders, available house capital and payment liquidity also constrain new activity.
+
+Enough assets in total does not always mean enough immediately accessible cash for a withdrawal.
 
 ## Protection mechanisms
 
@@ -17,11 +19,15 @@ Cinder checks your margin separately from the shared account's gross exposure, n
 
 Customer collateral and Cinder's loss-bearing capital are accounted for separately. Your ordinary trading loss is not automatically charged to other customers. Fund claims are also distinct from paid claims: an unpaid obligation does not disappear because protection capital is exhausted.
 
+The **house protection fund** is Cinder's loss-bearing capital, not a second name for customer deposits. Whether a particular loss is covered, and how much can be paid, depends on the applicable coverage policy and available resources. The presence of a fund is not a promise to reimburse every loss.
+
 ## Risk units and ADL
 
 A **risk unit** is the group of positions and resources affected by the same venue account's margin and closeout rules. A failure in one unit is not automatically spread to unrelated units.
 
-Venue auto-deleveraging (ADL) can reduce Cinder's aggregate position even when some individual customers are healthy. Cinder first applies the account's restoration policy. For an authorized replacement that executes, original entry economics are preserved and the replacement-price difference and execution cost are assigned to Cinder's house resources.
+Liquidation enforces margin requirements. **Auto-deleveraging (ADL)** is a venue-driven reduction of exposure that can affect a position without that customer failing their own margin check.
+
+Venue ADL can reduce Cinder's aggregate position even when some individual customers are healthy. **Restoration** means attempting a permitted replacement of the removed exposure. Cinder first applies the account's restoration policy. For an authorized replacement that executes, original entry economics are preserved and the replacement-price difference and execution cost are assigned to Cinder's house resources.
 
 If affected quantity remains unrestored, it is reduced proportionally among eligible positions on the affected side, within that risk unit. Allocation uses whole lots and the policy's deterministic rounding rule.
 

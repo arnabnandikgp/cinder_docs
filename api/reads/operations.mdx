@@ -11,7 +11,7 @@ playground: "none"
 Your recorded requests and their current status. Results belong to your account. The query supports HTTP and
 [WebSocket](/api/websocket), including subscriptions.
 
-<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
+<Note>Configure `client` and the example inputs using [SDK integration](/quickstart). Examples show typed SDK values, not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -77,7 +77,7 @@ Use the configured [client and envelope](/api/authentication). Each request supp
 </ParamField>
 
 <ParamField body="command.query.family" type="&quot;operations&quot;" required>
-  Selects this exact private projection.
+  Selects this account-data family.
 </ParamField>
 
 <ParamField body="command.query.limit" type="number" required>
@@ -90,8 +90,7 @@ Use the configured [client and envelope](/api/authentication). Each request supp
 
 ## Response fields
 
-Illustrative decoded SDK values are shown at the right; absent optional fields
-mean unavailable, not zero. Empty `rows` is valid.
+Examples show decoded SDK values. Absent optional fields mean unavailable, not zero. Empty `rows` is valid.
 
 <ResponseField name="kind" type="&quot;page&quot;" required>
   Paged-response discriminator.
@@ -136,7 +135,9 @@ mean unavailable, not zero. Empty `rows` is valid.
 
 ## Behavior
 
-Retained Cinder history, not native venue history. READ-agent projections omit owner grant commands that contain other agent keys. An operation may be durable while its external outcome remains unknown.
+Use this family to list recorded Cinder requests and inspect their current receipts. For one known request ID, use [operation lookup](/api/methods/operation).
+
+The history is Cinder's retained account record, not a full native venue history. READ agents do not see owner grant commands containing other agents' keys. A recorded request can still have an unresolved external outcome.
 
 ## Paging and errors
 

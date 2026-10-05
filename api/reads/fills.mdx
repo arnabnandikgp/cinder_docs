@@ -11,7 +11,7 @@ playground: "none"
 Your attributed fills, execution values and fees. Results belong to your account. The query supports HTTP and
 [WebSocket](/api/websocket), including subscriptions.
 
-<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
+<Note>Configure `client` and the example inputs using [SDK integration](/quickstart). Examples show typed SDK values, not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -59,7 +59,7 @@ Use the configured [client and envelope](/api/authentication). Each request supp
 </ParamField>
 
 <ParamField body="command.query.family" type="&quot;fills&quot;" required>
-  Selects this exact private projection.
+  Selects this account-data family.
 </ParamField>
 
 <ParamField body="command.query.limit" type="number" required>
@@ -72,8 +72,7 @@ Use the configured [client and envelope](/api/authentication). Each request supp
 
 ## Response fields
 
-Illustrative decoded SDK values are shown at the right; absent optional fields
-mean unavailable, not zero. Empty `rows` is valid.
+Examples show decoded SDK values. Absent optional fields mean unavailable, not zero. Empty `rows` is valid.
 
 <ResponseField name="kind" type="&quot;page&quot;" required>
   Paged-response discriminator.
@@ -134,7 +133,11 @@ mean unavailable, not zero. Empty `rows` is valid.
 
 ## Behavior
 
-Only successfully applied, customer-classified ordinary fills appear, deduplicated. ACKs, requested quantity, suspense and rejected evidence do not. Forced liquidation, ADL and restoration changes appear in [movements](/api/reads/movements) and current positions; this is not complete forced-fill history.
+This family contains confirmed ordinary trading fills allocated to your account, with duplicate reports counted once. An acknowledgement or requested quantity is not a fill. Reports that are unverified or not yet allocated to your account are excluded.
+
+Positive `lots` means a buy; negative `lots` means a sell. A positive `fee` is a charge and a negative fee is a rebate. The fee is the actual allocated amount, not the order's fee cap.
+
+Liquidation, ADL and restoration changes are reflected in [account movements](/api/reads/movements) and current positions. This family is not a complete history of those forced position changes.
 
 ## Paging and errors
 

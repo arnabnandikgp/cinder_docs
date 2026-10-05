@@ -24,6 +24,6 @@ Eight sessions is **not** an eight-session allowance for each customer or a guar
 
 The record budget is not a trade count: handshake confirmation, large replies and updates also consume records. Reconnect with fresh attestation before a channel expires or exhausts its record budget.
 
-On subscription closure or overflow, establish a new channel and fetch a zero-cursor snapshot. Delivery failure does not automatically retry an order or payout. See [lifecycle](/api/lifecycle).
+On subscription closure or overflow, establish a new channel and start a read without a cursor to obtain a fresh snapshot. Delivery failure does not automatically retry an order or payout. See [lifecycle](/api/lifecycle).
 
 These bounds are separate from venue rate limits and the risk policy's financial limits. Account authentication and agent-grant durations can impose tighter expiry.

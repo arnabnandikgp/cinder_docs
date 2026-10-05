@@ -3,9 +3,12 @@ title: "Exact units"
 description: "Use integer lots, price ticks and quote-asset atoms."
 ---
 
+A **lot** is one configured unit of position size, a **tick** is one configured unit of price, and a **quote atom** is one unit of the quote asset's smallest configured accounting scale. Their sizes depend on the market; `2n` lots does not necessarily mean two tokens, and `100n` quote atoms does not mean $100.
+
 | Quantity | Representation |
 | --- | --- |
-| IDs, hashes and public keys | 32-byte `Uint8Array`; identifiers are nonzero. |
+| Account/market IDs, manifest/snapshot hashes and Ed25519 public keys | 32-byte `Uint8Array`; identifiers are nonzero. |
+| Nitro PCR0/1/2 measurements | 48-byte `Uint8Array` each. |
 | Order or position quantity | Signed i64 `bigint` lots. |
 | Prices and marks | u64 `bigint` ticks in the configured market unit. |
 | Cash, basis, funding, fees and payouts | i128 `bigint` quote atoms, with field-specific sign and positivity rules. |
@@ -20,6 +23,12 @@ description: "Use integer lots, price ticks and quote-asset atoms."
 `signed fill value = lots × ticks × numerator / denominator`
 
 The conversion must satisfy the market's exactness rules. Do not infer display decimals from the precision version.
+
+### Conversion example
+
+For an illustrative market with `numerator = 1n` and `denominator = 1n`, 2 lots at 100 ticks have a signed entry value of `2 × 100 = 200` quote atoms. A sell of 2 lots has a signed value of −200 atoms. This is position notional, not the margin deposited or cash paid to purchase an asset.
+
+For a real integration, obtain the IDs and conversion rules from [market metadata](/api/reads/markets), and the display labels and decimal scales from your integration configuration. The metadata response alone does not provide human-readable asset labels or token decimals.
 
 Remaining basis is signed entry value, not a displayed average price. Settled cash excludes unsettled funding; accounting equity, risk equity and withdrawable funds are distinct. See the [account example](/guides/accounts).
 

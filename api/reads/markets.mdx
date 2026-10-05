@@ -11,7 +11,7 @@ playground: "none"
 Market units, order modes and leverage caps. Results belong to your account. The query supports HTTP and
 [WebSocket](/api/websocket), including subscriptions.
 
-<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
+<Note>Configure `client` and the example inputs using [SDK integration](/quickstart). Examples show typed SDK values, not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -60,7 +60,7 @@ Use the configured [client and envelope](/api/authentication). Each request supp
 </ParamField>
 
 <ParamField body="command.query.family" type="&quot;markets&quot;" required>
-  Selects this exact private projection.
+  Selects this account-data family.
 </ParamField>
 
 <ParamField body="command.query.limit" type="number" required>
@@ -73,8 +73,7 @@ Use the configured [client and envelope](/api/authentication). Each request supp
 
 ## Response fields
 
-Illustrative decoded SDK values are shown at the right; absent optional fields
-mean unavailable, not zero. Empty `rows` is valid.
+Examples show decoded SDK values. Absent optional fields mean unavailable, not zero. Empty `rows` is valid.
 
 <ResponseField name="kind" type="&quot;page&quot;" required>
   Paged-response discriminator.
@@ -128,7 +127,7 @@ mean unavailable, not zero. Empty `rows` is valid.
 </ResponseField>
 
 <ResponseField name="modes" type="number" required>
-  Supported mode mask, currently 7 for GTC, ALO and IOC.
+  Order-mode bitmask: GTC=1, ALO=2, IOC=4. A value of 7 includes all three modes.
 </ResponseField>
 
 <ResponseField name="leverageCap" type="bigint (u64)">
@@ -139,7 +138,11 @@ mean unavailable, not zero. Empty `rows` is valid.
 
 ## Behavior
 
-Conversion is lots × ticks × numerator / denominator in quote atoms, subject to governed exactness rules. These are configured trading units, not ticker prices, orderbook depth or chart data. A supported mode does not remove the account and market restrictions on individual orders.
+Use the returned `market` ID in order and leverage commands. `precision` and `quotePrecision` identify unit versions, not decimal counts. Conversion is `lots × ticks × numerator / denominator` in quote atoms, subject to the market's exactness rules.
+
+Asset labels, token decimals and display formatting must come from your integration configuration; they are not fields in this response. These rows do not supply live prices, candles or orderbook depth.
+
+A supported order mode does not guarantee an order will pass account permissions, margin or current risk checks. An absent `leverageCap` is unavailable information, not permission to select unlimited leverage.
 
 ## Paging and errors
 

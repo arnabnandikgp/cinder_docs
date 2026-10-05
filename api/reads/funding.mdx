@@ -11,7 +11,7 @@ playground: "none"
 Recognized funding payments and settlement status. Results belong to your account. The query supports HTTP and
 [WebSocket](/api/websocket), including subscriptions.
 
-<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
+<Note>Configure `client` and the example inputs using [SDK integration](/quickstart). Examples show typed SDK values, not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -59,7 +59,7 @@ Use the configured [client and envelope](/api/authentication). Each request supp
 </ParamField>
 
 <ParamField body="command.query.family" type="&quot;funding&quot;" required>
-  Selects this exact private projection.
+  Selects this account-data family.
 </ParamField>
 
 <ParamField body="command.query.limit" type="number" required>
@@ -72,8 +72,7 @@ Use the configured [client and envelope](/api/authentication). Each request supp
 
 ## Response fields
 
-Illustrative decoded SDK values are shown at the right; absent optional fields
-mean unavailable, not zero. Empty `rows` is valid.
+Examples show decoded SDK values. Absent optional fields mean unavailable, not zero. Empty `rows` is valid.
 
 <ResponseField name="kind" type="&quot;page&quot;" required>
   Paged-response discriminator.
@@ -111,11 +110,11 @@ mean unavailable, not zero. Empty `rows` is valid.
 </ResponseField>
 
 <ResponseField name="lots" type="bigint (i64)" required>
-  Frozen own lots eligible at the funding boundary.
+  Your position size recorded for that funding event, not necessarily your current position size.
 </ResponseField>
 
 <ResponseField name="payment" type="bigint (i128)">
-  Optional recognized signed payment, in quote atoms. Absence means unknown, not zero.
+  Recognized allocation in quote atoms: positive adds value to your account, negative deducts it. Absence means unknown, not zero.
 </ResponseField>
 
 <ResponseField name="settled" type="boolean" required>
@@ -130,7 +129,11 @@ mean unavailable, not zero. Empty `rows` is valid.
 
 ## Behavior
 
-An absent `payment` is unknown, not zero. Venue settlement can precede attribution to your account; settlement is not a second funding earning.
+Each row relates to a funding event and the position size recorded for your account at that event. These are account allocations, not a public funding-rate feed.
+
+An absent `payment` means the allocation is not yet known. Do not display it as a zero payment, even if `settled` is true: external settlement can precede completion of the account allocation.
+
+Once a recognized allocation settles, its value moves from unsettled `funding` into `cash`. For example, a −3-atom allocation reduces cash by 3 and removes that same liability from unsettled funding. It does not charge the account twice. See [funding and margin](/guides/accounts#funding-and-margin).
 
 ## Paging and errors
 

@@ -35,6 +35,16 @@ Here, only $600 can be paid immediately because the remaining available value is
 
 This example assumes the stated valuation and non-overlapping requirements. Actual risk checks may value collateral or unrealized gains more conservatively. Dollar amounts are illustrative; the API uses exact quote-asset atoms.
 
+## Funding and margin
+
+Funding is a payment associated with holding a perpetual position. A positive recognized payment adds to your account value; a negative payment reduces it. While it is unsettled, the API records it separately from `cash`.
+
+In the example above, settling the $3 payment changes `cash` from $998 to $995 and unsettled `funding` from −$3 to $0. Accounting equity remains $1,035 if the position value is unchanged. Settlement moves an already recorded amount; it does not charge the payment twice.
+
+Initial margin is the collateral requirement for the position under your selected leverage. Maintenance margin is the minimum needed to support it under the risk policy. Pending orders and withdrawals can require additional reserved funds.
+
+The API also reports **risk equity**, the value used for margin checks. Unlike accounting equity, it does not count positive unsettled funding as available backing. Neither figure is a promise of immediate withdrawal liquidity.
+
 ## Account access and pooled execution
 
 Account setup supplies your private account ID, owner wallet and configured payout recipient. Connecting the wallet authenticates that account; it does not give you access to Cinder's venue keys.

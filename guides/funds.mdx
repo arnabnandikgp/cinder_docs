@@ -9,13 +9,21 @@ Your deposit moves from your Solana wallet to Cinder's custody vault. Once the d
 
 Cinder routes working collateral to the supported execution venue as needed. Moving funds between the vault and venue does not create another deposit or change the owner of your balance. Collateral can remain at a venue between trades; each order does not require a fresh round trip.
 
-Use the mint, network and deposit route specified by your account configuration. Confirmation requirements and transfer costs are route-specific.
+Before sending funds, use the deposit instructions supplied for your account to check:
+
+- The Solana network and exact token mint; a matching token symbol is not enough.
+- The vault address and transfer route associated with your account.
+- The required confirmations and any transfer costs.
+
+A submitted wallet transaction is not yet a credited Cinder balance. Check your account after confirmation. Deposits use the configured Solana transfer route, not a `deposit` command on `PrivateClient`.
 
 ## Request a withdrawal
 
 The account owner submits a [payout request](/api/methods/payout) specifying the net amount, maximum additional fee and whether partial payment is allowed. Payment goes to the account's configured token recipient; trading agents cannot withdraw or replace it.
 
 Cinder reserves the requested amount plus its fee cap. Admission checks open-position margin, outstanding orders, other commitments and available payment liquidity.
+
+For example, requesting a net payment of $100 with a $1 additional fee cap reserves $101. The fee cap is permission to charge up to that amount, not a statement that $1 will be charged. Read `paid` for the confirmed recipient amount and `railFees` for the actual withdrawal-transfer fees. Amounts here are illustrative; SDK requests use [quote atoms](/api/units).
 
 You can withdraw genuine free collateral while positions remain open. Collateral needed to support those positions must first be released by reducing or closing them. A higher displayed equity does not by itself make more cash payable.
 

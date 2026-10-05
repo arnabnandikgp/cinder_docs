@@ -8,12 +8,14 @@ Different checks answer different questions. Verifying the enclave, verifying yo
 | Check | What it establishes | What it does not establish |
 | --- | --- | --- |
 | Enclave attestation and channel binding | Your connection is bound to the expected measured code and encryption key. | Error-free code, correct economics or continuous service availability. |
-| Account records and reconciliation | Recorded balances and positions match the external evidence included in the reconciliation. | That a venue cannot fail or that assets are always accessible. |
+| Account records and reconciliation | The service has compared its accounting with the external evidence included in the reconciliation. | A standalone proof of complete reserves, immunity from venue failure or immediate access to every asset. |
 | Recovery claim inclusion | Your final claim belongs to the published recovery root. | That the root includes every liability or that the vault contains enough assets. |
-| Active funded recovery state | The program has an activated estate and backing that can be checked before a claim. | Automatic recovery from arbitrary open exposure or operator-free wind-down. |
+| Active funded recovery state | The Solana program has an activated final claim set with backing that can be checked before a claim. | Automatic recovery from open exposure or settlement without a recovery operator. |
 
 The recovery manifest binds a final statement to the relevant deployment, pool, asset, settlement cutoff and policy. Your client checks that context before constructing a payment claim.
 
-A Merkle proof is an inclusion proof, not a complete solvency proof. Complete backing also requires correctly recorded liabilities, appropriate asset valuation and access to the assets. Neither encryption nor a proof system can supply missing funds or venue withdrawal authority.
+A **recovery root** is a compact cryptographic commitment to the final claim set. Your Merkle proof shows that your specific claim is included without requiring the whole list to be published.
+
+Inclusion is not a complete solvency proof. Complete backing also requires correctly recorded liabilities, appropriate asset valuation and access to the assets. Neither encryption nor a proof system can supply missing funds or venue withdrawal authority.
 
 Cinder's private account data is not published as a public portfolio report. A public recovery claim reveals the information needed to verify and pay that claim, not the account's complete trading history.

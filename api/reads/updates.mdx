@@ -11,7 +11,7 @@ playground: "none"
 Account, position and operation snapshots. Results belong to your account. The query supports HTTP and
 [WebSocket](/api/websocket), including subscriptions.
 
-<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
+<Note>Configure `client` and the example inputs using [SDK integration](/quickstart). Examples show typed SDK values, not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -57,7 +57,7 @@ Use the configured [client and envelope](/api/authentication). Each request supp
 </ParamField>
 
 <ParamField body="command.query.family" type="&quot;updates&quot;" required>
-  Selects this exact private projection.
+  Selects this account-data family.
 </ParamField>
 
 <ParamField body="command.query.limit" type="number" required>
@@ -70,8 +70,17 @@ Use the configured [client and envelope](/api/authentication). Each request supp
 
 ## Response fields
 
-Illustrative decoded SDK values are shown at the right; absent optional fields
-mean unavailable, not zero. Empty `rows` is valid.
+Inspect each row's `kind` before reading its fields:
+
+| Row kind | Contents |
+| --- | --- |
+| `account` | Balance, unsettled funding, reservations and available risk values. |
+| `position` | Basic market, size and entry-basis fields. |
+| `receipt` | A nested `receipt` describing one operation's current status. |
+
+Fields marked required inside a row group apply only to that row kind. For example, a `position` row does not contain `cash`, and a `receipt` row uses `row.receipt.outcome`, not `row.outcome`.
+
+Examples show decoded SDK values. Absent optional fields mean unavailable, not zero. Empty `rows` is valid.
 
 <ResponseField name="kind" type="&quot;page&quot;" required>
   Paged-response discriminator.
@@ -179,7 +188,11 @@ mean unavailable, not zero. Empty `rows` is valid.
 
 ## Behavior
 
-Use as an HTTP snapshot or a WebSocket subscription. Each delivered page replaces the selected page; it is not a delta or every journal transition. Position rows here omit the optional valuation/leverage of [positions](/api/reads/positions). Page further rows and query the selected retained histories when needed.
+Use this family for a combined account snapshot over HTTP or for [WebSocket updates](/api/websocket). Each delivered page replaces the previously displayed page; do not add its cash values or append its rows as if they were new events.
+
+The page can be only part of the snapshot. Use `next` to retrieve further rows under the same revision. Position rows omit the optional valuation and leverage fields available through [positions](/api/reads/positions).
+
+Several changes may be represented by one newer snapshot. To inspect intervening events, read the relevant retained operation, fill, funding or movement history.
 
 ## Paging and errors
 

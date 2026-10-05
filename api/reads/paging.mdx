@@ -3,21 +3,23 @@ title: "Private reads and paging"
 description: "Read account snapshots and traverse retained history."
 ---
 
-All ten read families use signed `{ kind: 'read', query: { family, limit, cursor? } }` requests. Owners and current READ agents can read the bound account. Reads do not change balances or consume an agent's accepted-order budget.
+A **read family** selects the kind of account data to retrieve, such as positions or fills. All ten families use signed `{ kind: 'read', query: { family, limit, cursor? } }` requests. Owners and current READ agents can read the bound account. Reads do not change balances or consume an agent's accepted-order budget.
 
 | Field | Meaning |
 | --- | --- |
 | `family` | `account`, `positions`, `operations`, `openOrders`, `fills`, `funding`, `movements`, `grants`, `markets` or `updates`. |
 | `limit` | Integer from 1 to 64 rows. |
-| `cursor` | Optional 40-byte cursor. Omitted or all-zero starts a snapshot. |
-| `revision` | A commitment to the permitted rows and query, not a global activity counter. |
+| `cursor` | Optional 40-byte continuation token. Omit it to start; pass the previous page's `next` for another page. |
+| `revision` | The identity of this account-data snapshot and query, not a global activity counter. |
 | `next` | The next cursor. All-zero means no more retained rows. |
 | `evaluatedAt` | Cinder's evaluation timestamp in milliseconds. |
 | `rows` | Typed rows for the selected family. An empty page is valid. |
 
 A nonzero cursor contains the 32-byte revision followed by a u64 big-endian row offset. Access restrictions apply before rows are paged.
 
-If permitted rows change, the service returns `conflict`. Discard that traversal and start at zero; pages from different revisions should not be combined. Reconnection also requires a new snapshot.
+For example, request `limit: 32` without a cursor. If `next` contains nonzero bytes, request another page using that exact value. Stop when `next` is all-zero. Treat the cursor as an opaque SDK value rather than constructing it yourself.
+
+If the relevant account data changes during paging, the service returns `conflict`. Discard that traversal and start again without a cursor; pages from different revisions should not be combined. Reconnection also requires a new snapshot.
 
 READ exposes account information across markets, except that an agent sees only its own grant in the grant directory. See [agents](/guides/agents).
 

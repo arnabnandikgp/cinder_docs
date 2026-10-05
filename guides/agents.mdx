@@ -5,6 +5,8 @@ description: "Authorize a trading client without giving it custody."
 
 A Cinder agent is a separate Ed25519 key that you authorize to act on your private account. It is not a native venue agent and never receives Cinder's pooled execution keys.
 
+Use an agent for a bot or trading application that should not require a wallet prompt for every action. The client keeps its agent private key; the account owner signs a grant for that key's public address.
+
 ## Permissions
 
 The owner creates a [grant](/api/methods/grant) with an expiry, permissions and order limits.
@@ -22,6 +24,10 @@ READ exposes account information across markets. Grant it only to clients you tr
 </Warning>
 
 Agents cannot withdraw funds, change recipients, select leverage, authorize another agent or administer Cinder.
+
+An order budget counts accepted orders, not fills or calendar days. With a budget of 10, one accepted order that fills in several parts consumes one slot. Retrying that same order does not consume another slot; a new accepted order does.
+
+Each grant authorizes trading and cancellation in one market. Trading multiple markets requires separate scoped agent keys. A grant cannot be edited in place within the same authority epoch; changing those permissions requires account-wide revocation and explicit new grants.
 
 ## Revocation
 

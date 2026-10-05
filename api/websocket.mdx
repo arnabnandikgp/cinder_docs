@@ -25,7 +25,7 @@ export async function subscribe(client: PrivateClient, ctx: Context) {
 }
 ```
 
-The first response supplies a snapshot. Changes to permitted rows trigger replacement pages; updates may coalesce. They are not a delta feed or a notification for every intervening fill.
+The first response supplies a snapshot. Changes to permitted rows trigger replacement pages. Several changes can be combined into one newer snapshot: replace the displayed page rather than adding its rows to the previous page. This is not a notification for every intervening fill.
 
 To recover intervening changes, page the relevant order, fill, funding or operation history. Unrelated customers' activity does not supply a global activity counter.
 
@@ -33,7 +33,7 @@ To recover intervening changes, page the relevant order, fill, funding or operat
 
 Permissions, session expiry and state freshness are rechecked every 500 ms, including during idle periods. Revocation, expiry, lost freshness, missing or out-of-order delivery and queue overflow close the stream.
 
-Returning the subscription iterator also closes the channel, even before its first read. On closure or an iterator error, establish a freshly attested session, use current account authority and start from a zero-cursor snapshot.
+Leaving the `for await` loop closes the subscription iterator and its channel. On closure or an iterator error, establish a freshly attested session, use current account authority and start again without a cursor to obtain a fresh snapshot.
 
 Outstanding trades are reconciled through their original operation IDs; reconnect does not automatically resend them.
 

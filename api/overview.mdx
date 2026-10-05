@@ -16,11 +16,17 @@ Customer methods share one signed protocol; they are not separate plaintext REST
 
 ## Connection and authentication
 
-Start with [SDK integration](/quickstart). Use the HTTPS origin and account configuration supplied for your deployment, and an independently trusted enclave release policy.
+Start with [SDK integration](/quickstart) to identify the required inputs and where to obtain them. The application uses service connection configuration (the API's HTTPS origin and network/deployment IDs), an independently trusted enclave release policy, and existing account configuration. The API origin is the service's base address, not a Solana RPC or native venue URL. Connecting a wallet authenticates an existing account rather than registering a new one.
 
 POST carriers use `application/octet-stream`. Private account IDs, commands and signatures are encrypted in the body, not placed in URLs or headers. The service does not use bearer-token login or cookies. Browser requests use the configured allowed origin; HTTPS/WSS is required for remote connections.
 
 Your Cinder signature authenticates a private account request. It is not forwarded as a native venue signature; Cinder handles venue execution through its own authority.
+
+## Integrating a trading client
+
+Use Cinder's SDK for account commands rather than changing the base URL of a venue's native SDK. Cinder requests identify your private account and use Cinder signatures and encrypted sessions; native venue authentication cannot be forwarded unchanged.
+
+Public prices, candles and orderbook feeds are separate from these private account methods. The [markets read](/api/reads/markets) supplies configured trading units and limits, not a public market-data stream.
 
 ## Methods and data
 

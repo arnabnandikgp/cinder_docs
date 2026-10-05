@@ -6,11 +6,11 @@ playground: "none"
 
 **Carrier:** `POST /v1/exchange` (encrypted binary).
 
-**Permission:** Owner or live READ agent.
+**Permission:** Owner or current READ agent.
 
 Read a compact account snapshot. The same command is available over [WebSocket](/api/websocket).
 
-<Note>Examples show [SDK values](/api/overview), not a plaintext HTTP JSON body.</Note>
+<Note>Configure `client` and the example inputs using [SDK integration](/quickstart). Examples show typed SDK values, not a plaintext HTTP JSON body.</Note>
 
 <RequestExample>
 ```ts SDK request
@@ -43,7 +43,7 @@ The client supplies the configured domain, account, policy, signer and verified
 session binding, and signs the canonical [envelope](/api/authentication).
 
 <ParamField body="id" type="Uint8Array (32 bytes)" required>
-  Nonzero private request ID. Retain it for an exact retry; use a distinct ID for a different intent.
+  Nonzero ID for this read request. A view does not create a trading or payout operation.
 </ParamField>
 
 <ParamField body="epoch" type="bigint (u64)" required>
@@ -51,7 +51,7 @@ session binding, and signs the canonical [envelope](/api/authentication).
 </ParamField>
 
 <ParamField body="expiresAt" type="bigint (u64)" required>
-  Authentication expiry in milliseconds, within the verified session and deployment limits.
+  Expiry timestamp in milliseconds, within the verified channel and configured authentication limits; not a validity duration.
 </ParamField>
 
 <ParamField body="command.kind" type="&quot;view&quot;" required>
@@ -60,8 +60,7 @@ session binding, and signs the canonical [envelope](/api/authentication).
 
 ## Response fields
 
-The example uses illustrative quote atoms and configured IDs, not live venue data.
-A view is not withdrawable cash or a proof of backing.
+The example uses illustrative quote atoms and configured IDs, not live venue data. See [account amounts](/guides/accounts) for the meaning of cash, funding and reservations.
 
 <ResponseField name="kind" type="&quot;view&quot;" required>
   Compact account view discriminator.
